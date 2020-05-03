@@ -13,9 +13,9 @@ static double circleEvaluate(void *p, vec2 pos) {
 	return len(pos) - s->radius;
 }
 
-static Bounds2 circleBounds(void *p) {
+static circle_t circleBounds(void *p) {
 	struct circle *s = p;
-	return (Bounds2){Zero2, s->radius};
+	return (circle_t){Zero2, s->radius};
 }
 
 SDF2 Circle(double diameter) {
@@ -34,9 +34,9 @@ static double rectangleEvaluate(void *p, vec2 pos) {
 	return len(max(d, Zero2)) + min(max(d.x, d.y), 0.0);
 }
 
-static Bounds2 rectangleBounds(void *p) {
+static circle_t rectangleBounds(void *p) {
 	struct rectangle *s = p;
-	return (Bounds2){Zero2, sqrt(s->x*s->x + s->y*s->y)};
+	return (circle_t){Zero2, sqrt(s->x*s->x + s->y*s->y)};
 }
 
 SDF2 Rectangle(double x, double y) {

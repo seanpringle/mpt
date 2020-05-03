@@ -2,8 +2,8 @@
 #include "common.h"
 #include <threads.h>
 
-void place(Material mat, SDF3 sdf) {
-	Object *o = allot(sizeof(Object));
+void object(material_t mat, SDF3 sdf) {
+	object_t *o = allot(sizeof(object_t));
 	o->sdf = sdf;
 	o->material = mat;
 	o->next = objects;
@@ -11,11 +11,11 @@ void place(Material mat, SDF3 sdf) {
 	objectCount++;
 }
 
-static void merge(Pixel *r) {
+static void merge(pixel_t *r) {
 	for (int y = 0; y < scene.height; y++) {
 		for (int x = 0; x < scene.width; x++) {
-			Pixel *spixel = &raster[y*scene.width+x];
-			Pixel *rpixel = &r[y*scene.width+x];
+			pixel_t *spixel = &raster[y*scene.width+x];
+			pixel_t *rpixel = &r[y*scene.width+x];
 			spixel->color = colorAdd(spixel->color, rpixel->color);
 			spixel->rays += rpixel->rays;
 			spixel->alpha += rpixel->alpha;
@@ -24,7 +24,7 @@ static void merge(Pixel *r) {
 }
 
 struct workerJob {
-	Pixel *raster;
+	pixel_t *raster;
 	int seed;
 };
 
@@ -42,10 +42,10 @@ static int workerRun(void *context) {
 			for (int sample = 0; sample < scene.samples; sample++) {
 				double u = randomNormalized(&rnd);
 				double v = randomNormalized(&rnd);
-				Ray ray = emit(x, y, scene.width, scene.height, u, v, &rnd);
+				ray_t ray = emit(x, y, scene.width, scene.height, u, v, &rnd);
 				Color color; int bounces; double alpha;
 				trace(ray, 0, NULL, &color, &bounces, &alpha);
-				Pixel *pixel = &job->raster[y*scene.width+x];
+				pixel_t *pixel = &job->raster[y*scene.width+x];
 				pixel->color = colorAdd(pixel->color, color);
 				pixel->alpha += alpha;
 				pixel->rays++;
@@ -65,7 +65,7 @@ void render(int workers) {
 	for (int i = 0; i < workers; i++) {
 		jobs[i] = (struct workerJob){
 			.seed = seed + i,
-			.raster = calloc(scene.width * scene.height, sizeof(Pixel)),
+			.raster = calloc(scene.width * scene.height, sizeof(pixel_t)),
 		};
 		thrd_create(&threads[i], workerRun, &jobs[i]);
 	}
@@ -78,7 +78,7 @@ void render(int workers) {
 }
 
 static NRGBA nrgba(int x, int y) {
-	Pixel pixel = raster[y*scene.width+x];
+	pixel_t pixel = raster[y*scene.width+x];
 
 	// average
 	Color c = colorScale(pixel.color, 1.0/(double)pixel.rays);

@@ -3,7 +3,7 @@ typedef double (*sdf2)(void*,vec2);
 
 typedef struct {
 	sdf2 evaluate;
-	Bounds2 bounds;
+	circle_t bounds;
 	void *context;
 } SDF2;
 

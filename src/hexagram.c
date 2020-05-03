@@ -2,12 +2,12 @@
 #include "common.h"
 #include "glsl.h"
 
-struct hexagram {
+struct state {
 	double r;
 };
 
 static double hexagramEvaluate(void *ptr, vec2 p) {
-	struct hexagram *s = ptr;
+	struct state *s = ptr;
 	const double kx = -0.5;
 	const double ky = 0.8660254038;
 	const double kz = 0.5773502692;
@@ -19,13 +19,13 @@ static double hexagramEvaluate(void *ptr, vec2 p) {
 	return len(p) * sign(p.y);
 }
 
-static Bounds2 hexagramBounds(void *p) {
-	struct hexagram *s = p;
-	return (Bounds2){Zero2, s->r*2}; //*2?
+static circle_t hexagramBounds(void *p) {
+	struct state *s = p;
+	return (circle_t){Zero2, s->r*2}; //*2?
 }
 
 SDF2 Hexagram(double diameter) {
-	struct hexagram *s = allot(sizeof(struct hexagram));
+	struct state *s = allot(sizeof(struct state));
 	s->r = diameter/2;
 	return (SDF2){hexagramEvaluate, hexagramBounds(s), s};
 }

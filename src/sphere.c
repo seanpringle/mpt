@@ -10,19 +10,19 @@ SDF3 Sphere(double diameter) {
 
 #else
 
-struct sphere {
+struct state {
 	double radius;
 };
 
 static double distance(void *ptr, vec3 pos) {
-	struct sphere *s = ptr;
+	struct state *s = ptr;
 	return len(pos) - s->radius;
 }
 
 SDF3 Sphere(double diameter) {
-	struct sphere *s = allot(sizeof(struct sphere));
+	struct state *s = allot(sizeof(struct state));
 	s->radius = diameter/2;
-	return (SDF3){distance, (Bounds3){Zero3,s->radius}, s};
+	return (SDF3){distance, (sphere_t){Zero3,s->radius}, s};
 }
 
 #endif

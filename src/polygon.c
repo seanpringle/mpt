@@ -2,13 +2,13 @@
 #include "common.h"
 #include "glsl.h"
 
-struct polygon {
+struct state {
 	int n;
 	double r;
 };
 
 static double polygonEvaluate(void *p, vec2 pos) {
-	struct polygon *s = p;
+	struct state *s = p;
 	double n = (double)s->n / 2.0;
 	double o = M_PI / 2.0 / n;
 	double a = atan(pos.y / pos.x);
@@ -24,13 +24,13 @@ static double polygonEvaluate(void *p, vec2 pos) {
 	return len(sub(pos, scale(v2(cos(d), sin(d)), s->r)));
 }
 
-static Bounds2 polygonBounds(void *p) {
-	struct polygon *s = p;
-	return (Bounds2){Zero2, s->r*2}; // *2?
+static circle_t polygonBounds(void *p) {
+	struct state *s = p;
+	return (circle_t){Zero2, s->r*2}; // *2?
 }
 
 SDF2 Polygon(int n, double r) {
-	struct polygon *s = allot(sizeof(struct polygon));
+	struct state *s = allot(sizeof(struct state));
 	s->n = n;
 	s->r = r;
 	return (SDF2){polygonEvaluate, polygonBounds(s), s};

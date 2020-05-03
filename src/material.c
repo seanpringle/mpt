@@ -24,16 +24,16 @@ static bool lightLight(void *p, Color *c) {
 	return true;
 }
 
-static bool lightScatter(void *p, Ray ray, Object *object, vec3 hit, int depth, Ray *bounced, Color *color) {
-	memset(bounced, 0, sizeof(Ray));
+static bool lightScatter(void *p, ray_t ray, object_t *object, vec3 hit, int depth, ray_t *bounced, Color *color) {
+	memset(bounced, 0, sizeof(ray_t));
 	*color = Naught;
 	return false;
 }
 
-Material Light(Color c) {
+material_t Light(Color c) {
 	struct light *s = allot(sizeof(struct light));
 	s->color = c;
-	return (Material){ .invisible = false, .light = lightLight, .scatter = lightScatter, .context = s };
+	return (material_t){ .invisible = false, .light = lightLight, .scatter = lightScatter, .context = s };
 }
 
 struct diffuse {
@@ -46,19 +46,19 @@ static bool diffuseLight(void *p, Color *c) {
 	return false;
 }
 
-static bool diffuseScatter(void *p, Ray ray, Object *object, vec3 hit, int depth, Ray *bounced, Color *color) {
+static bool diffuseScatter(void *p, ray_t ray, object_t *object, vec3 hit, int depth, ray_t *bounced, Color *color) {
 	struct diffuse *s = p;
 	vec3 normal = SDF3Normal(object->sdf, hit);
 	vec3 redirection = vec3Unit(vec3Sub(vec3Add(vec3Add(hit, normal), pickVec3(ray.rnd)), hit));
-	*bounced = (Ray){.origin = hit, .direction = redirection, .rnd = ray.rnd};
+	*bounced = (ray_t){.origin = hit, .direction = redirection, .rnd = ray.rnd};
 	*color = s->color;
 	return true;
 }
 
-Material Matt(Color c) {
+material_t Matt(Color c) {
 	struct diffuse *s = allot(sizeof(struct diffuse));
 	s->color = c;
-	return (Material){ .invisible = false, .light = diffuseLight, .scatter = diffuseScatter, .context = s };
+	return (material_t){ .invisible = false, .light = diffuseLight, .scatter = diffuseScatter, .context = s };
 }
 
 struct metallic {
@@ -72,7 +72,7 @@ static bool metallicLight(void *p, Color *c) {
 	return false;
 }
 
-static bool metallicScatter(void *p, Ray ray, Object *object, vec3 hit, int depth, Ray *bounced, Color *color) {
+static bool metallicScatter(void *p, ray_t ray, object_t *object, vec3 hit, int depth, ray_t *bounced, Color *color) {
 	struct metallic *s = p;
 
 	vec3 normal = SDF3Normal(object->sdf, hit);
@@ -85,21 +85,21 @@ static bool metallicScatter(void *p, Ray ray, Object *object, vec3 hit, int dept
 	}
 
 	if (vec3Dot(reflected, normal) > 0) {
-		*bounced = (Ray){hit, reflected, ray.rnd};
+		*bounced = (ray_t){hit, reflected, ray.rnd};
 		*color = s->color;
 		return true;
 	}
 
-	memset(bounced, 0, sizeof(Ray));
+	memset(bounced, 0, sizeof(ray_t));
 	*color = Naught;
 	return false;
 }
 
-Material Metal(Color c, double roughness) {
+material_t Metal(Color c, double roughness) {
 	struct metallic *s = allot(sizeof(struct metallic));
 	s->color = c;
 	s->roughness = roughness;
-	return (Material){ .invisible = false, .light = metallicLight, .scatter = metallicScatter, .context = s };
+	return (material_t){ .invisible = false, .light = metallicLight, .scatter = metallicScatter, .context = s };
 }
 
 struct dielectric {
@@ -119,7 +119,7 @@ static double schlick(double cosine, double refInd) {
 	return r0 + (1.0-r0)*pow(1.0-cosine, 5);
 }
 
-static bool dielectricScatter(void *p, Ray ray, Object *object, vec3 hit, int depth, Ray *bounced, Color *color) {
+static bool dielectricScatter(void *p, ray_t ray, object_t *object, vec3 hit, int depth, ray_t *bounced, Color *color) {
 	struct dielectric *s = p;
 
 	vec3 normal = SDF3Normal(object->sdf, hit);
@@ -143,20 +143,20 @@ static bool dielectricScatter(void *p, Ray ray, Object *object, vec3 hit, int de
 		}
 	}
 
-	*bounced = (Ray){hit, direction, ray.rnd};
+	*bounced = (ray_t){hit, direction, ray.rnd};
 	*color = s->color;
 	return true;
 }
 
-Material Glass(Color c, double refractiveIndex) {
+material_t Glass(Color c, double refractiveIndex) {
 	struct dielectric *s = allot(sizeof(struct dielectric));
 	s->color = c;
 	s->refractiveIndex = refractiveIndex;
-	return (Material){ .invisible = false, .light = dielectricLight, .scatter = dielectricScatter, .context = s };
+	return (material_t){ .invisible = false, .light = dielectricLight, .scatter = dielectricScatter, .context = s };
 }
 
-Material ShadowCatcher() {
-	Material m = Matt(Black);
+material_t ShadowCatcher() {
+	material_t m = Matt(Black);
 	m.invisible = true;
 	return m;
 }

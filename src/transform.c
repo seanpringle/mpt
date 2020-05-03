@@ -77,26 +77,26 @@ struct matrix44 rotation(vec3 v, double a) {
 	};
 }
 
-struct transform {
+struct state {
 	SDF3 sdf;
 	struct matrix44 M;
 	struct matrix44 I;
 };
 
 static double transformEvaluate(void *p, vec3 pos) {
-	struct transform *s = p;
+	struct state *s = p;
 	struct matrix44 m = s->I;
 	return s->sdf.evaluate(s->sdf.context, matrixMul(m, pos));
 }
 
-static Bounds3 transformBounds(void *p) {
-	struct transform *s = p;
+static sphere_t transformBounds(void *p) {
+	struct state *s = p;
 	struct matrix44 m = s->M;
-	return (Bounds3){matrixMul(m, s->sdf.bounds.center), s->sdf.bounds.radius};
+	return (sphere_t){matrixMul(m, s->sdf.bounds.center), s->sdf.bounds.radius};
 }
 
 SDF3 Translate(vec3 v, SDF3 sdf) {
-	struct transform *s = allot(sizeof(struct transform));
+	struct state *s = allot(sizeof(struct state));
 	s->sdf = sdf;
 	s->M = translation(v);
 	s->I = inverse(s->M);
@@ -116,7 +116,7 @@ SDF3 TranslateZ(double t, SDF3 sdf) {
 }
 
 SDF3 Rotate(vec3 v, double deg, SDF3 sdf) {
-	struct transform *s = allot(sizeof(struct transform));
+	struct state *s = allot(sizeof(struct state));
 	s->sdf = sdf;
 	s->M = rotation(v, deg);
 	s->I = inverse(s->M);

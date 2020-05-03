@@ -6,7 +6,7 @@ struct CSG {
 	SDF3 *sdfs;
 };
 
-Bounds3 csgBounds(void *p) {
+sphere_t csgBounds(void *p) {
 	struct CSG *s = p;
 	int count = s->count;
 
@@ -17,7 +17,7 @@ Bounds3 csgBounds(void *p) {
 	vec3 points[count*6];
 
 	for (int i = 0; i < count; i++) {
-		Bounds3 bounds = s->sdfs[i].bounds;
+		sphere_t bounds = s->sdfs[i].bounds;
 		mradius = MAX(mradius, bounds.radius);
 		centers = vec3Add(centers, bounds.center);
 		points[point++] = vec3Add(bounds.center, (vec3){bounds.radius, 0, 0});
@@ -45,10 +45,10 @@ Bounds3 csgBounds(void *p) {
 		}
 	}
 
-	return (Bounds3){center, radius};
+	return (sphere_t){center, radius};
 }
 
-static double bounds3Distance(Bounds3 b, vec3 p) {
+static double bounds3Distance(sphere_t b, vec3 p) {
 	return vec3Len(vec3Sub(p, b.center)) - b.radius;
 }
 
@@ -74,7 +74,7 @@ static double unionEvaluate(void *p, vec3 pos) {
 	return dist;
 }
 
-SDF3 Union(int count, ...) {
+SDF3 Combine(int count, ...) {
 	va_list aa;
 	va_start(aa, count);
 	struct CSG *s = allot(sizeof(struct CSG));
@@ -112,7 +112,7 @@ static double differenceEvaluate(void *p, vec3 pos) {
 	return dist;
 }
 
-SDF3 Difference(int count, ...) {
+SDF3 Subtract(int count, ...) {
 	va_list aa;
 	va_start(aa, count);
 	struct CSG *s = allot(sizeof(struct CSG));
@@ -147,7 +147,7 @@ static double intersectionEvaluate(void *p, vec3 pos) {
 	return dist;
 }
 
-SDF3 Intersection(int count, ...) {
+SDF3 Intersect(int count, ...) {
 	va_list aa;
 	va_start(aa, count);
 	struct CSG *s = allot(sizeof(struct CSG));

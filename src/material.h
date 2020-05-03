@@ -1,12 +1,12 @@
 
 vec3 pickVec3(struct random_data *rnd);
 
-Material Matt(Color c);
+material_t Matt(Color c);
 
-Material Light(Color c);
+material_t Light(Color c);
 
-Material Metal(Color c, double roughness);
+material_t Metal(Color c, double roughness);
 
-Material Glass(Color c, double refractiveIndex);
+material_t Glass(Color c, double refractiveIndex);
 
-Material ShadowCatcher();
+material_t ShadowCatcher();

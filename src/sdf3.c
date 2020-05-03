@@ -34,7 +34,7 @@ SDF3 TriPrism(double h, double w) {
 
 SDF3 Pyramid(double h, double w) {
 	SDF3 prism = TriPrism(h, w);
-	return RotateX(-90, Intersection(2, prism, RotateY(90, prism)));
+	return RotateX(-90, Intersect(2, prism, RotateY(90, prism)));
 }
 
 SDF3 Capsule(double h, double d1, double d2) {

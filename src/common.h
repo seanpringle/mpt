@@ -50,7 +50,7 @@ typedef struct {
 	vec3 origin;
 	vec3 direction;
 	struct random_data *rnd;
-} Ray;
+} ray_t;
 
 typedef struct {
 	vec3 origin;
@@ -60,45 +60,45 @@ typedef struct {
 	double m;
 	double focus;
 	double aperture;
-} Camera;
+} camera_t;
 
 typedef struct {
 	Color color;
 	int rays;
 	double alpha; // candidate for invisible shadows-only surface
-} Pixel;
+} pixel_t;
 
 typedef struct {
 	vec2 center;
 	double radius;
-} Bounds2;
+} circle_t;
 
 typedef struct {
 	vec3 center;
 	double radius;
-} Bounds3;
+} sphere_t;
 
 #include "sdf2.h"
 #include "sdf3.h"
 
-struct _Material;
-struct _Object;
+struct _material_t;
+struct _object_t;
 
 typedef bool (*materialLight)(void*, Color*);
-typedef bool (*materialScatter)(void*, Ray, struct _Object*, vec3, int, Ray*, Color*);
+typedef bool (*materialScatter)(void*, ray_t, struct _object_t*, vec3, int, ray_t*, Color*);
 
-typedef struct _Material {
+typedef struct _material_t {
 	bool invisible;
 	materialLight light;
 	materialScatter scatter;
 	void *context;
-} Material;
+} material_t;
 
-typedef struct _Object {
+typedef struct _object_t {
 	SDF3 sdf;
-	struct _Material material;
-	struct _Object *next;
-} Object;
+	struct _material_t material;
+	struct _object_t *next;
+} object_t;
 
 typedef struct {
 	int64_t seed;
@@ -114,28 +114,28 @@ typedef struct {
 	double shadowL; // shadow alpha lower limit on invisible surfaces (prenumbra cut-off)
 	double shadowD; // shadow darkness (light brightness multipler)
 	double shadowR; // shadow sharpness (light radius multipler)
-} Scene;
+} scene_t;
 
-extern Scene scene;
-extern Camera camera;
-extern Object *objects;
+extern scene_t scene;
+extern camera_t camera;
+extern object_t *objects;
 extern int objectCount;
-extern Pixel *raster;
+extern pixel_t *raster;
 
 #include "material.h"
 
 float randomNormalized(struct random_data *rnd);
 
-void place(Material, SDF3);
+void object(material_t, SDF3);
 
 uint32_t* output();
 
 void render(int workers);
 
-void trace(Ray ray, int depth, Object *bypass, Color *rcolor, int *rbounces, double *ralpha);
+void trace(ray_t ray, int depth, object_t *bypass, Color *rcolor, int *rbounces, double *ralpha);
 
-bool march(Ray ray, Object *bypass, Object **thing, vec3 *hit);
+bool march(ray_t ray, object_t *bypass, object_t **thing, vec3 *hit);
 
 void perspective(vec3 lookFrom, vec3 lookAt, vec3 vup, double vfov, vec3 focus, double aperture);
 
-Ray emit(int imageX, int imageY, int imageW, int imageH, double jitterU, double jitterV, struct random_data *rnd);
+ray_t emit(int imageX, int imageY, int imageW, int imageH, double jitterU, double jitterV, struct random_data *rnd);

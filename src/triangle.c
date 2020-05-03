@@ -2,12 +2,12 @@
 #include "common.h"
 #include "glsl.h"
 
-struct triangle {
+struct state {
 	vec2 p0, p1, p2;
 };
 
 static double triangleEvaluate(void *p, vec2 pos) {
-	struct triangle *s = p;
+	struct state *s = p;
 	vec2 e0 = sub(s->p1, s->p0);
 	vec2 e1 = sub(s->p2, s->p1);
 	vec2 e2 = sub(s->p0, s->p2);
@@ -25,13 +25,13 @@ static double triangleEvaluate(void *p, vec2 pos) {
 	return -sqrt(d.x) * sign(d.y);
 }
 
-static Bounds2 triangleBounds(void *p) {
-	struct triangle *s = p;
-	return (Bounds2){Zero2, max(max(len(s->p0), len(s->p1)), len(s->p2))};
+static circle_t triangleBounds(void *p) {
+	struct state *s = p;
+	return (circle_t){Zero2, max(max(len(s->p0), len(s->p1)), len(s->p2))};
 }
 
 SDF2 Triangle(vec2 p0, vec2 p1, vec2 p2) {
-	struct triangle *s = allot(sizeof(struct triangle));
+	struct state *s = allot(sizeof(struct state));
 	s->p0 = p0;
 	s->p1 = p1;
 	s->p2 = p2;

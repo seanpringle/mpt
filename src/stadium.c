@@ -2,14 +2,14 @@
 #include "common.h"
 #include "glsl.h"
 
-struct stadium {
+struct state {
 	double h;
 	double r1;
 	double r2;
 };
 
 static double stadiumEvaluate(void *p, vec2 pos) {
-	struct stadium *s = p;
+	struct state *s = p;
 	pos.x = abs(pos.x);
 	double b = (s->r1 - s->r2) / s->h;
 	double a = sqrt(1.0 - b*b);
@@ -23,13 +23,13 @@ static double stadiumEvaluate(void *p, vec2 pos) {
 	return dot(pos, v2(a, b)) - s->r1;
 }
 
-static Bounds2 stadiumBounds(void *p) {
-	struct stadium *s = p;
-	return (Bounds2){Zero2, s->h + s->r1 + s->r2};
+static circle_t stadiumBounds(void *p) {
+	struct state *s = p;
+	return (circle_t){Zero2, s->h + s->r1 + s->r2};
 }
 
 SDF2 Stadium(double h, double d1, double d2) {
-	struct stadium *s = allot(sizeof(struct stadium));
+	struct state *s = allot(sizeof(struct state));
 	s->h = h;
 	s->r1 = d1/2;
 	s->r2 = d2/2;

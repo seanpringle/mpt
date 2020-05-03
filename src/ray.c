@@ -1,16 +1,16 @@
 
 #include "common.h"
 
-static Color directLight(Ray ray, vec3 pos) {
+static Color directLight(ray_t ray, vec3 pos) {
 	Color color;
-	for (Object *t = objects; t != NULL; t = t->next) {
+	for (object_t *t = objects; t != NULL; t = t->next) {
 		Color light;
-		Material material = t->material;
+		material_t material = t->material;
 		if (material.light(material.context, &light)) {
-			Bounds3 bounds = t->sdf.bounds;
+			sphere_t bounds = t->sdf.bounds;
 			vec3 center = vec3Add(bounds.center, vec3Scale(pickVec3(ray.rnd), bounds.radius * scene.shadowR));
-			Ray lr = {.origin = pos, .direction = vec3Unit(vec3Sub(center, pos)), .rnd = ray.rnd};
-			Object *thing;
+			ray_t lr = {.origin = pos, .direction = vec3Unit(vec3Sub(center, pos)), .rnd = ray.rnd};
+			object_t *thing;
 			vec3 hit;
 			if (march(lr, NULL, &thing, &hit) && thing == t) {
 				color = colorAdd(color, light);
@@ -20,22 +20,22 @@ static Color directLight(Ray ray, vec3 pos) {
 	return color;
 }
 
-void trace(Ray ray, int depth, Object *bypass, Color *rcolor, int *rbounces, double *ralpha) {
+void trace(ray_t ray, int depth, object_t *bypass, Color *rcolor, int *rbounces, double *ralpha) {
 
 	Color color = Naught;
 	int bounces = 0;
 	double alpha = 1.0;
 
-	Ray shadow;
+	ray_t shadow;
 	Color scolor;
 	int sbounces;
 	double salpha;
 
-	Object *thing;
+	object_t *thing;
 	vec3 hit;
 
 	if (march(ray, bypass, &thing, &hit)) {
-		Material material = thing->material;
+		material_t material = thing->material;
 
 		if (depth == 0 && material.invisible) {
 			alpha = scene.shadowH;
@@ -95,7 +95,7 @@ void trace(Ray ray, int depth, Object *bypass, Color *rcolor, int *rbounces, dou
 }
 
 // ray marching by sphere tracing
-bool march(Ray ray, Object *bypass, Object **thing, vec3 *hit) {
+bool march(ray_t ray, object_t *bypass, object_t **thing, vec3 *hit) {
 
 	vec3 pos = ray.origin;
 
@@ -112,11 +112,11 @@ bool march(Ray ray, Object *bypass, Object **thing, vec3 *hit) {
 	pos = vec3Add(pos, vec3Scale(ray.direction, scene.threshold * 10));
 
 	// find all possible targets
-	Object* targets[objectCount];
+	object_t* targets[objectCount];
 	int count = 0;
 
-	for (Object *t = objects; t != NULL; t = t->next) {
-		Bounds3 bounds = t->sdf.bounds;
+	for (object_t *t = objects; t != NULL; t = t->next) {
+		sphere_t bounds = t->sdf.bounds;
 
 		// since objects have a bounding sphere, behave like a non-SDF
 		// ray tracer and do a line-sphere intersection test to quickly
@@ -143,11 +143,11 @@ bool march(Ray ray, Object *bypass, Object **thing, vec3 *hit) {
 	if (count > 0) {
 		// now behave like a path tracer and evaluate SDFs
 		while (vec3Len(vec3Sub(pos, ray.origin)) < scene.horizon) {
-			Object *near = NULL;
+			object_t *near = NULL;
 			double dist = 0;
 
 			for (int i = 0; i < count; i++) {
-				Object *t = targets[i];
+				object_t *t = targets[i];
 				if (near != NULL) {
 					double bd = sphereDistance(t->sdf.bounds.center, t->sdf.bounds.radius, pos);
 					if (bd > dist) {

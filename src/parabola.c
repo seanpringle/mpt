@@ -2,12 +2,12 @@
 #include "common.h"
 #include "glsl.h"
 
-struct parabola {
+struct state {
 	double m, h;
 };
 
 static double parabolaEvaluate(void *ptr, vec2 pos) {
-	struct parabola *s = ptr;
+	struct state *s = ptr;
 	pos.x = abs(pos.x);
 	double m = s->m;
 
@@ -36,16 +36,16 @@ static double parabolaEvaluate(void *ptr, vec2 pos) {
 	return len(sub(pos, v2(x, y))) * sign(pos.x-x);
 }
 
-static Bounds2 parabolaBounds(void *p) {
-	struct parabola *s = p;
+static circle_t parabolaBounds(void *p) {
+	struct state *s = p;
 	double x = sqrt(s->h / s->m);
 	double r = sqrt(x*x + s->h*s->h);
-	return (Bounds2){Zero2, r};
+	return (circle_t){Zero2, r};
 }
 
 SDF2 Parabola(double w, double h) {
 	w = w/2;
-	struct parabola *s = allot(sizeof(struct parabola));
+	struct state *s = allot(sizeof(struct state));
 	s->m = h/(w*w);
 	s->h = h;
 	return (SDF2){parabolaEvaluate, parabolaBounds(s), s};

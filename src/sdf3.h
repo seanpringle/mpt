@@ -3,7 +3,7 @@ typedef double (*sdf3)(void*,vec3);
 
 typedef struct {
 	sdf3 evaluate;
-	Bounds3 bounds;
+	sphere_t bounds;
 	void *context;
 } SDF3;
 
@@ -43,11 +43,11 @@ SDF3 Elongate(double x, double y, double z, SDF3 sdf);
 
 SDF3 Ellipsoid(double x, double y, double z);
 
-SDF3 Union(int count, ...);
+SDF3 Combine(int count, ...);
 
-SDF3 Difference(int count, ...);
+SDF3 Subtract(int count, ...);
 
-SDF3 Intersection(int count, ...);
+SDF3 Intersect(int count, ...);
 
 SDF3 Extrude(double h, SDF2 sdf);
 

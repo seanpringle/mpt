@@ -35,17 +35,17 @@ void* allot(size_t n) {
 	return ptr;
 }
 
-Scene scene;
-Camera camera;
-Pixel *raster;
-Object *objects;
+scene_t scene;
+camera_t camera;
+pixel_t *raster;
+object_t *objects;
 int objectCount;
 
 void reset() {
 	used = 0;
 
-	memset(&scene, 0, sizeof(Scene));
-	memset(&camera, 0, sizeof(Camera));
+	memset(&scene, 0, sizeof(scene_t));
+	memset(&camera, 0, sizeof(camera_t));
 
 	free(raster);
 	raster = NULL;
@@ -54,34 +54,34 @@ void reset() {
 	objectCount = 0;
 }
 
-void things(vec3 relative, Material material) {
+void things(vec3 relative, material_t material) {
 
-	place(material,
+	object(material,
 		Translate(add(relative, v3(0,0,500)), Sphere(1000))
 	);
 
-	place(material,
+	object(material,
 		Translate(add(relative, v3(0,2000,500)), Cube(1000, 1000, 1000))
 	);
 
-	place(material,
+	object(material,
 		Translate(add(relative, v3(-1500,0,500)), Cylinder(1000, 1000))
 	);
 
-	place(material,
+	object(material,
 		Translate(add(relative, v3(1500,0,500)), Torus(1000, 200))
 	);
 
-	place(material,
+	object(material,
 		Translate(add(relative, v3(-1500,2000,500)), Pyramid(1000, 1000))
 	);
 
-	place(material,
+	object(material,
 		Translate(add(relative, v3(1500,2000,500)), Cone(1000, 1000))
 	);
 
 	for (int i = 3; i <= 8; i++) {
-		place(material,
+		object(material,
 			Translate(add(relative, v3((double)(i-3)*600-1450, -1250, 250)), Extrude(500, Polygon(i, 250)))
 		);
 	}
@@ -109,26 +109,26 @@ void test() {
 		0.0
 	);
 
-	Material steel = Metal((Color){0.4, 0.4, 0.4}, 0.95);
-	Material stainless = Metal((Color){0.4, 0.4, 0.4}, 0.3);
-	Material gold = Metal((Color){0.93, 0.78, 0.31}, 0.0);
-	Material copper = Metal((Color){0.68, 0.45, 0.41}, 0.8);
-	Material brass = Metal((Color){0.80, 0.58, 0.45}, 0.9);
+	material_t steel = Metal((Color){0.4, 0.4, 0.4}, 0.95);
+	material_t stainless = Metal((Color){0.4, 0.4, 0.4}, 0.3);
+	material_t gold = Metal((Color){0.93, 0.78, 0.31}, 0.0);
+	material_t copper = Metal((Color){0.68, 0.45, 0.41}, 0.8);
+	material_t brass = Metal((Color){0.80, 0.58, 0.45}, 0.9);
 
-	place(
+	object(
 		Matt((Color){0.16, 0.12, 0.09}),
 		Translate((vec3){0, 0, -5}, Cube(25000, 25000, 10))
 	);
 
-	place(
+	object(
 		Light(colorScale(White, 4)),
 		Translate((vec3){-7500, 0, 20000}, Sphere(20000))
 	);
 
-	place(brass,
+	object(brass,
 		Translate(v3(-5500, -1200, 500),
-			Difference(4,
-				Intersection(2,
+			Subtract(4,
+				Intersect(2,
 					Sphere(1000),
 					Cube(800, 800, 800)
 				),
@@ -139,10 +139,10 @@ void test() {
 		)
 	);
 
-	place(brass,
+	object(brass,
 		Translate(v3(5500, -1200, 500),
-			Union(4,
-				Intersection(2,
+			Combine(4,
+				Intersect(2,
 					Sphere(1000),
 					Cube(800, 800, 800)
 				),
@@ -153,25 +153,25 @@ void test() {
 		)
 	);
 
-	place(brass,
+	object(brass,
 		Translate(v3(6500, 3750, 500),
 			Round(100, Cube(800, 800, 800))
 		)
 	);
 
-	place(brass,
+	object(brass,
 		Translate(v3(-6500, 3750, 500),
 			Round(100, Cylinder(800, 1000))
 		)
 	);
 
-	place(steel,
+	object(steel,
 		Translate(v3(6000, 900, 600),
 			Repeat(1, 1, 1, 400, 400, 400, Sphere(400))
 		)
 	);
 
-	place(copper,
+	object(copper,
 		Translate(v3(-6000, 900, 500),
 			Capsule(1000, 1000, 500)
 		)
@@ -179,10 +179,10 @@ void test() {
 
 	SDF3 bowlShape = Revolve(0, Parabola(2000, 2000));
 
-	place(Glass((Color){1.0, 0.5, 0.5}, 1.5),
-		Union(2,
+	object(Glass((Color){1.0, 0.5, 0.5}, 1.5),
+		Combine(2,
 			TranslateZ(100, CylinderR(200, 1000, 10)),
-			Difference(2, bowlShape, TranslateZ(200, bowlShape))
+			Subtract(2, bowlShape, TranslateZ(200, bowlShape))
 		)
 	);
 
@@ -194,13 +194,13 @@ void test() {
 	for (int i = 0; i < 9; i++) {
 		if (i >= 3 && i < 6) continue;
 		Color color = (i%2 == 0) ? (Color){0.5, 1.0, 0.5}: (Color){0.5, 0.5, 1.0};
-		place(Glass(color, 1.5),
+		object(Glass(color, 1.5),
 			Translate(v3(0, (double)(i)*1000-3500, 250), Sphere(500))
 		);
 	}
 
 	srand(scene.seed);
-	raster = calloc(scene.width * scene.height, sizeof(Pixel));
+	raster = calloc(scene.width * scene.height, sizeof(pixel_t));
 
 	int workers = 1;//get_nprocs();
 	int batches = ceil((float)scene.passes/(float)workers);
