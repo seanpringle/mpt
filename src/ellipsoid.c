@@ -19,7 +19,7 @@ static sphere_t ellipsoidBounds(void *p) {
 	return (sphere_t){Zero3, max(s->r.x, max(s->r.y, s->r.z)) * 2};
 }
 
-SDF3 Ellipsoid(double x, double y, double z) {
+SDF3 ellipsoid(double x, double y, double z) {
 	struct state *s = allot(sizeof(struct state));
 	s->r = (vec3){x, y, z};
 	return (SDF3){ellipsoidEvaluate, ellipsoidBounds(s), s};

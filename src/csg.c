@@ -74,7 +74,7 @@ static double unionEvaluate(void *p, vec3 pos) {
 	return dist;
 }
 
-SDF3 Combine(int count, ...) {
+SDF3 combine(int count, ...) {
 	va_list aa;
 	va_start(aa, count);
 	struct CSG *s = allot(sizeof(struct CSG));
@@ -112,7 +112,7 @@ static double differenceEvaluate(void *p, vec3 pos) {
 	return dist;
 }
 
-SDF3 Subtract(int count, ...) {
+SDF3 subtract(int count, ...) {
 	va_list aa;
 	va_start(aa, count);
 	struct CSG *s = allot(sizeof(struct CSG));
@@ -147,7 +147,7 @@ static double intersectionEvaluate(void *p, vec3 pos) {
 	return dist;
 }
 
-SDF3 Intersect(int count, ...) {
+SDF3 intersect(int count, ...) {
 	va_list aa;
 	va_start(aa, count);
 	struct CSG *s = allot(sizeof(struct CSG));

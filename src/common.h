@@ -84,12 +84,12 @@ typedef struct {
 struct _material_t;
 struct _object_t;
 
-typedef bool (*materialLight)(void*, Color*);
+typedef bool (*materiallight)(void*, Color*);
 typedef bool (*materialScatter)(void*, ray_t, struct _object_t*, vec3, int, ray_t*, Color*);
 
 typedef struct _material_t {
 	bool invisible;
-	materialLight light;
+	materiallight light;
 	materialScatter scatter;
 	void *context;
 } material_t;
@@ -122,9 +122,19 @@ extern object_t *objects;
 extern int objectCount;
 extern pixel_t *raster;
 
-#include "material.h"
-
 float randomNormalized(struct random_data *rnd);
+
+vec3 pickVec3(struct random_data *rnd);
+
+material_t matt(Color c);
+
+material_t light(Color c);
+
+material_t metal(Color c, double roughness);
+
+material_t glass(Color c, double refractiveIndex);
+
+material_t shadows();
 
 void object(material_t, SDF3);
 

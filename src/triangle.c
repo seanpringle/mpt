@@ -30,7 +30,7 @@ static circle_t triangleBounds(void *p) {
 	return (circle_t){Zero2, max(max(len(s->p0), len(s->p1)), len(s->p2))};
 }
 
-SDF2 Triangle(vec2 p0, vec2 p1, vec2 p2) {
+SDF2 triangle(vec2 p0, vec2 p1, vec2 p2) {
 	struct state *s = allot(sizeof(struct state));
 	s->p0 = p0;
 	s->p1 = p1;

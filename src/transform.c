@@ -95,7 +95,7 @@ static sphere_t transformBounds(void *p) {
 	return (sphere_t){matrixMul(m, s->sdf.bounds.center), s->sdf.bounds.radius};
 }
 
-SDF3 Translate(vec3 v, SDF3 sdf) {
+SDF3 translate(vec3 v, SDF3 sdf) {
 	struct state *s = allot(sizeof(struct state));
 	s->sdf = sdf;
 	s->M = translation(v);
@@ -103,19 +103,19 @@ SDF3 Translate(vec3 v, SDF3 sdf) {
 	return (SDF3){transformEvaluate, transformBounds(s), s};
 }
 
-SDF3 TranslateX(double t, SDF3 sdf) {
-	return Translate((vec3){t,0,0}, sdf);
+SDF3 translateX(double t, SDF3 sdf) {
+	return translate((vec3){t,0,0}, sdf);
 }
 
-SDF3 TranslateY(double t, SDF3 sdf) {
-	return Translate((vec3){0,t,0}, sdf);
+SDF3 translateY(double t, SDF3 sdf) {
+	return translate((vec3){0,t,0}, sdf);
 }
 
-SDF3 TranslateZ(double t, SDF3 sdf) {
-	return Translate((vec3){0,0,t}, sdf);
+SDF3 translateZ(double t, SDF3 sdf) {
+	return translate((vec3){0,0,t}, sdf);
 }
 
-SDF3 Rotate(vec3 v, double deg, SDF3 sdf) {
+SDF3 rotate(vec3 v, double deg, SDF3 sdf) {
 	struct state *s = allot(sizeof(struct state));
 	s->sdf = sdf;
 	s->M = rotation(v, deg);
@@ -123,15 +123,15 @@ SDF3 Rotate(vec3 v, double deg, SDF3 sdf) {
 	return (SDF3){transformEvaluate, transformBounds(s), s};
 }
 
-SDF3 RotateX(double deg, SDF3 sdf) {
-	return Rotate((vec3){1,0,0}, deg, sdf);
+SDF3 rotateX(double deg, SDF3 sdf) {
+	return rotate((vec3){1,0,0}, deg, sdf);
 }
 
-SDF3 RotateY(double deg, SDF3 sdf) {
-	return Rotate((vec3){0,1,0}, deg, sdf);
+SDF3 rotateY(double deg, SDF3 sdf) {
+	return rotate((vec3){0,1,0}, deg, sdf);
 }
 
-SDF3 RotateZ(double deg, SDF3 sdf) {
-	return Rotate((vec3){0,0,1}, deg, sdf);
+SDF3 rotateZ(double deg, SDF3 sdf) {
+	return rotate((vec3){0,0,1}, deg, sdf);
 }
 

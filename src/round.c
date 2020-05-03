@@ -19,7 +19,7 @@ static sphere_t roundedBounds(void *p) {
 	return bounds;
 }
 
-SDF3 Round(double r, SDF3 sdf) {
+SDF3 rounded(double r, SDF3 sdf) {
 	struct state *s = allot(sizeof(struct state));
 	s->r = r;
 	s->sdf = sdf;

@@ -35,7 +35,7 @@ static sphere_t repeatBounds(void *p) {
 	return (sphere_t){bounds.center, len(v3(x, y, z))};
 }
 
-SDF3 Repeat(double cx, double cy, double cz, double ox, double oy, double oz, SDF3 sdf) {
+SDF3 repeat(double cx, double cy, double cz, double ox, double oy, double oz, SDF3 sdf) {
 	struct state *s = allot(sizeof(struct state));
 	s->count = v3(cx, cy, cz);
 	s->offset = v3(ox, oy, oz);

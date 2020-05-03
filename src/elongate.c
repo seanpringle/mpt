@@ -19,7 +19,7 @@ static sphere_t elongateBounds(void *p) {
 	return bounds;
 }
 
-SDF3 Elongate(double x, double y, double z, SDF3 sdf) {
+SDF3 elongate(double x, double y, double z, SDF3 sdf) {
 	struct state *s = allot(sizeof(struct state));
 	s->h = (vec3){x/2,y/2,z/2};
 	s->sdf = sdf;

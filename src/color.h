@@ -5,6 +5,9 @@ typedef struct {
 	double r, g, b;
 } Color;
 
+#define rgb(r,g,b) ((Color){r,g,b})
+#define shine(c,m) colorScale(c,m)
+
 #define White (Color){1,1,1}
 #define Black (Color){0.001,0.001,0.001}
 #define Naught (Color){0,0,0}
@@ -29,8 +32,6 @@ Color colorMax(Color ca, Color cb);
 
 double colorBrightness(Color c);
 
-Color RGB(uint8_t r, uint8_t g, uint8_t b);
-
-Color Hex(int x);
+Color hex(int x);
 
 uint32_t NRGBAtoARGB32(NRGBA rgba);

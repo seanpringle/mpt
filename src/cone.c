@@ -19,7 +19,7 @@ static sphere_t coneBounds(void *p) {
 	return (sphere_t){Zero3, sqrt(s->h*s->h + s->r*s->r)};
 }
 
-SDF3 Cone(double h, double d) {
+SDF3 cone(double h, double d) {
 	double r = d/2;
 	double rad = atan(h/r);
 	struct state *s = allot(sizeof(struct state));
@@ -28,5 +28,5 @@ SDF3 Cone(double h, double d) {
 	s->h = h;
 	s->r = r;
 	SDF3 sdf = (SDF3){coneEvaluate, coneBounds(s), s};
-	return TranslateZ(h/2, sdf);
+	return translateZ(h/2, sdf);
 }

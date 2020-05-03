@@ -18,7 +18,7 @@ static circle_t circleBounds(void *p) {
 	return (circle_t){Zero2, s->radius};
 }
 
-SDF2 Circle(double diameter) {
+SDF2 circle(double diameter) {
 	struct circle *s = allot(sizeof(struct circle));
 	s->radius = diameter/2;
 	return (SDF2){circleEvaluate, circleBounds(s), s};
@@ -39,7 +39,7 @@ static circle_t rectangleBounds(void *p) {
 	return (circle_t){Zero2, sqrt(s->x*s->x + s->y*s->y)};
 }
 
-SDF2 Rectangle(double x, double y) {
+SDF2 rectangle(double x, double y) {
 	struct rectangle *s = allot(sizeof(struct rectangle));
 	s->x = x/2;
 	s->y = y/2;

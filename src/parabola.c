@@ -43,7 +43,7 @@ static circle_t parabolaBounds(void *p) {
 	return (circle_t){Zero2, r};
 }
 
-SDF2 Parabola(double w, double h) {
+SDF2 parabola(double w, double h) {
 	w = w/2;
 	struct state *s = allot(sizeof(struct state));
 	s->m = h/(w*w);

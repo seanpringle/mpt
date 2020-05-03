@@ -29,7 +29,7 @@ static circle_t polygonBounds(void *p) {
 	return (circle_t){Zero2, s->r*2}; // *2?
 }
 
-SDF2 Polygon(int n, double r) {
+SDF2 polygon(int n, double r) {
 	struct state *s = allot(sizeof(struct state));
 	s->n = n;
 	s->r = r;

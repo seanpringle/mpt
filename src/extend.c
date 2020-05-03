@@ -23,7 +23,7 @@ static sphere_t extrudeBounds(void *p) {
 	};
 }
 
-SDF3 Extrude(double h, SDF2 sdf) {
+SDF3 extrude(double h, SDF2 sdf) {
 	struct estate *s = allot(sizeof(struct estate));
 	s->h = h/2;
 	s->sdf = sdf;
@@ -51,7 +51,7 @@ static sphere_t revolveBounds(void *p) {
 	};
 }
 
-SDF3 Revolve(double o, SDF2 sdf) {
+SDF3 revolve(double o, SDF2 sdf) {
 	struct rstate *s = allot(sizeof(struct rstate));
 	s->o = o;
 	s->sdf = sdf;

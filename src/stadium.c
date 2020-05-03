@@ -28,7 +28,7 @@ static circle_t stadiumBounds(void *p) {
 	return (circle_t){Zero2, s->h + s->r1 + s->r2};
 }
 
-SDF2 Stadium(double h, double d1, double d2) {
+SDF2 stadium(double h, double d1, double d2) {
 	struct state *s = allot(sizeof(struct state));
 	s->h = h;
 	s->r1 = d1/2;

@@ -34,15 +34,7 @@ double colorBrightness(Color c) {
 	return 0.299*c.r + 0.587*c.g + 0.114*c.b;
 }
 
-Color RGB(uint8_t r, uint8_t g, uint8_t b) {
-	return (Color){
-		(double)r * 255.0,
-		(double)g * 255.0,
-		(double)b * 255.0,
-	};
-}
-
-Color Hex(int x) {
+Color hex(int x) {
 	double r = (double)((x>>16)&0xff) / 255;
 	double g = (double)((x>>8)&0xff) / 255;
 	double b = (double)((x>>0)&0xff) / 255;

@@ -24,7 +24,7 @@ static circle_t hexagramBounds(void *p) {
 	return (circle_t){Zero2, s->r*2}; //*2?
 }
 
-SDF2 Hexagram(double diameter) {
+SDF2 hexagram(double diameter) {
 	struct state *s = allot(sizeof(struct state));
 	s->r = diameter/2;
 	return (SDF2){hexagramEvaluate, hexagramBounds(s), s};
