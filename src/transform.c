@@ -8,14 +8,15 @@ struct matrix44 {
 	double x30, x31, x32, x33;
 };
 
-vec3 matrixMul(struct matrix44 a, vec3 b) {
+__attribute__((hot))
+static vec3 matrixMul(struct matrix44 a, vec3 b) {
 	double x = a.x00*b.x + a.x01*b.y + a.x02*b.z + a.x03;
 	double y = a.x10*b.x + a.x11*b.y + a.x12*b.z + a.x13;
 	double z = a.x20*b.x + a.x21*b.y + a.x22*b.z + a.x23;
 	return (vec3){x, y, z};
 }
 
-double determinant(struct matrix44 a) {
+static double determinant(struct matrix44 a) {
 	return
 		a.x00*a.x11*a.x22*a.x33 - a.x00*a.x11*a.x23*a.x32 +
 		a.x00*a.x12*a.x23*a.x31 - a.x00*a.x12*a.x21*a.x33 +
@@ -32,7 +33,7 @@ double determinant(struct matrix44 a) {
 	;
 }
 
-struct matrix44 inverse(struct matrix44 a) {
+static struct matrix44 inverse(struct matrix44 a) {
 	struct matrix44 m;
 	double d = determinant(a);
 	m.x00 = (a.x12*a.x23*a.x31 - a.x13*a.x22*a.x31 + a.x13*a.x21*a.x32 - a.x11*a.x23*a.x32 - a.x12*a.x21*a.x33 + a.x11*a.x22*a.x33) / d;
@@ -54,7 +55,7 @@ struct matrix44 inverse(struct matrix44 a) {
 	return m;
 }
 
-struct matrix44 translation(vec3 v) {
+static struct matrix44 translation(vec3 v) {
 	return (struct matrix44){
 		1, 0, 0, v.x,
 		0, 1, 0, v.y,
@@ -63,7 +64,7 @@ struct matrix44 translation(vec3 v) {
 	};
 }
 
-struct matrix44 rotation(vec3 v, double a) {
+static struct matrix44 rotation(vec3 v, double a) {
 	a *= M_PI / 180.0;
 	v = vec3Unit(v);
 	double s = sin(a);
@@ -79,28 +80,25 @@ struct matrix44 rotation(vec3 v, double a) {
 
 struct state {
 	SDF3 sdf;
-	struct matrix44 M;
-	struct matrix44 I;
+	struct matrix44 im;
 };
 
 static double transformEvaluate(void *p, vec3 pos) {
 	struct state *s = p;
-	struct matrix44 m = s->I;
-	return s->sdf.evaluate(s->sdf.context, matrixMul(m, pos));
+	return SDF3Evaluate(s->sdf, matrixMul(s->im, pos));
 }
 
-static sphere_t transformBounds(void *p) {
+static sphere_t transformBounds(void *p, struct matrix44 m) {
 	struct state *s = p;
-	struct matrix44 m = s->M;
 	return (sphere_t){matrixMul(m, s->sdf.bounds.center), s->sdf.bounds.radius};
 }
 
 SDF3 translate(vec3 v, SDF3 sdf) {
 	struct state *s = allot(sizeof(struct state));
 	s->sdf = sdf;
-	s->M = translation(v);
-	s->I = inverse(s->M);
-	return (SDF3){transformEvaluate, transformBounds(s), s};
+	struct matrix44 m = translation(v);
+	s->im = inverse(m);
+	return (SDF3){transformEvaluate, transformBounds(s, m), s};
 }
 
 SDF3 translateX(double t, SDF3 sdf) {
@@ -118,9 +116,9 @@ SDF3 translateZ(double t, SDF3 sdf) {
 SDF3 rotate(vec3 v, double deg, SDF3 sdf) {
 	struct state *s = allot(sizeof(struct state));
 	s->sdf = sdf;
-	s->M = rotation(v, deg);
-	s->I = inverse(s->M);
-	return (SDF3){transformEvaluate, transformBounds(s), s};
+	struct matrix44 m = rotation(v, deg);
+	s->im = inverse(m);
+	return (SDF3){transformEvaluate, transformBounds(s, m), s};
 }
 
 SDF3 rotateX(double deg, SDF3 sdf) {

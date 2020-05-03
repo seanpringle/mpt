@@ -9,7 +9,7 @@ struct state {
 
 static double elongateEvaluate(void *p, vec3 pos) {
 	struct state *s = p;
-	return s->sdf.evaluate(s->sdf.context, sub(pos, clamp(pos, neg(s->h), s->h)));
+	return SDF3Evaluate(s->sdf, sub(pos, clamp(pos, neg(s->h), s->h)));
 }
 
 static sphere_t elongateBounds(void *p) {

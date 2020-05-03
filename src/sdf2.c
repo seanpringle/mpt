@@ -4,6 +4,10 @@
 
 vec2 Zero2;
 
+double SDF2Evaluate(SDF2 sdf, vec2 p) {
+	return sdf.evaluate(sdf.context, p);
+}
+
 struct circle {
 	double radius;
 };

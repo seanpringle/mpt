@@ -69,7 +69,7 @@ void things(vec3 relative, material_t material) {
 	);
 
 	object(material,
-		translate(add(relative, v3(1500,0,500)), torus(1000, 200))
+		translate(add(relative, v3(1500,0,600)), rotateX(90, torus(1000, 200)))
 	);
 
 	object(material,
@@ -82,7 +82,7 @@ void things(vec3 relative, material_t material) {
 
 	for (int i = 3; i <= 8; i++) {
 		object(material,
-			translate(add(relative, v3((double)(i-3)*600-1450, -1250, 250)), extrude(500, polygon(i, 250)))
+			translate(add(relative, v3((double)(i-3)*600-1450, -1250, 250)), extrude(500, polygon(i, 500)))
 		);
 	}
 }
@@ -173,11 +173,11 @@ void test() {
 
 	object(copper,
 		translate(v3(-6000, 900, 500),
-			capsule(1000, 1000, 500)
+			capsule(750, 1000, 500)
 		)
 	);
 
-	SDF3 bowlShape = revolve(0, parabola(2000, 2000));
+	SDF3 bowlShape = revolve(0, parabola(2000, 1500));
 
 	object(glass(rgb(1.0, 0.5, 0.5), 1.5),
 		combine(2,
@@ -185,6 +185,12 @@ void test() {
 			subtract(2, bowlShape, translateZ(200, bowlShape))
 		)
 	);
+
+	for (int i = 0; i < 8; i++) {
+		object(glass(White, 1.5),
+			translateY(-100, rotateZ(i*45, translate(v3(700, 0, 100), sphere(200))))
+		);
+	}
 
 	things(v3(-2750, -2750, 0), steel);
 	things(v3(2750, -2750, 0), copper);
@@ -195,7 +201,7 @@ void test() {
 		if (i >= 3 && i < 6) continue;
 		Color color = (i%2 == 0) ? rgb(0.5, 1.0, 0.5): rgb(0.5, 0.5, 1.0);
 		object(glass(color, 1.5),
-			translate(v3(0, (double)(i)*1000-3500, 250), sphere(500))
+			translate(v3(0, (double)(i)*1000-4000, 250), sphere(500))
 		);
 	}
 

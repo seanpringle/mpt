@@ -12,7 +12,7 @@ static double repeatEvaluate(void *p, vec3 pos) {
 	struct state *s = p;
 	vec3 count = s->count;
 	vec3 offset = s->offset;
-	return s->sdf.evaluate(s->sdf.context,
+	return SDF3Evaluate(s->sdf,
 		sub(pos, mul(
 			clamp(
 				vec3Round(

@@ -9,7 +9,7 @@ struct estate {
 
 static double extrudeEvaluate(void *p, vec3 pos) {
 	struct estate *s = p;
-	double d = s->sdf.evaluate(s->sdf.context, (vec2){pos.x, pos.y});
+	double d = SDF2Evaluate(s->sdf, (vec2){pos.x, pos.y});
 	vec2 w = (vec2){d, abs(pos.z)-s->h};
 	return min(max(w.x, w.y), 0.0) + len(max(w, Zero2));
 }
@@ -39,7 +39,7 @@ static double revolveEvaluate(void *p, vec3 pos) {
 	struct rstate *s = p;
 	vec2 v = v2(pos.x, pos.y);
 	vec2 q = v2(len(v) - s->o, pos.z);
-	return s->sdf.evaluate(s->sdf.context, q);
+	return SDF2Evaluate(s->sdf, q);
 }
 
 static sphere_t revolveBounds(void *p) {

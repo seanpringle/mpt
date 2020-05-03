@@ -66,7 +66,7 @@ static double unionEvaluate(void *p, vec3 pos) {
 				continue;
 			}
 		}
-		double d = sdf.evaluate(sdf.context, pos);
+		double d = SDF3Evaluate(sdf, pos);
 		if (i == 0 || d < dist) {
 			dist = d;
 		}
@@ -101,7 +101,7 @@ static double differenceEvaluate(void *p, vec3 pos) {
 				continue;
 			}
 		}
-		double d = sdf.evaluate(sdf.context, pos);
+		double d = SDF3Evaluate(sdf, pos);
 		if (i == 0) {
 			dist = d;
 		} else
@@ -139,7 +139,7 @@ static double intersectionEvaluate(void *p, vec3 pos) {
 				continue;
 			}
 		}
-		double d = sdf.evaluate(sdf.context, pos);
+		double d = SDF3Evaluate(sdf, pos);
 		if (i == 0 || d > dist) {
 			dist = d;
 		}

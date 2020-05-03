@@ -24,7 +24,7 @@ ray_t emit(int imageX, int imageY, int imageW, int imageH, double jitterU, doubl
 		vec3Add(vec3Add(vec3Scale(c->w, c->m), vec3Scale(c->u, -px * aspect)), vec3Scale(c->v, -py))
 	);
 
-	ray_t ray = { .origin = c->origin, .direction = direction, rnd = rnd };
+	ray_t ray = { .origin = c->origin, .direction = direction, .rnd = rnd };
 
 	if (c->aperture > 0) {
 		vec3 focus = vec3Add(c->origin, vec3Scale(direction, c->focus));

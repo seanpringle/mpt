@@ -8,13 +8,17 @@ double sphereDistance(vec3 center, double radius, vec3 pos) {
 	return len(sub(pos, center)) - radius;
 }
 
+double SDF3Evaluate(SDF3 sdf, vec3 p) {
+	return sdf.evaluate(sdf.context, p);
+}
+
 vec3 SDF3Normal(SDF3 sdf, vec3 p) {
 	double step = 0.000001;
-	vec3 gradient = (vec3){
-		sdf.evaluate(sdf.context, (vec3){p.x + step, p.y, p.z}) - sdf.evaluate(sdf.context, (vec3){p.x - step, p.y, p.z}),
-		sdf.evaluate(sdf.context, (vec3){p.x, p.y + step, p.z}) - sdf.evaluate(sdf.context, (vec3){p.x, p.y - step, p.z}),
-		sdf.evaluate(sdf.context, (vec3){p.x, p.y, p.z + step}) - sdf.evaluate(sdf.context, (vec3){p.x, p.y, p.z - step}),
-	};
+	vec3 gradient = v3(
+		SDF3Evaluate(sdf, v3(p.x + step, p.y, p.z)) - SDF3Evaluate(sdf, v3(p.x - step, p.y, p.z)),
+		SDF3Evaluate(sdf, v3(p.x, p.y + step, p.z)) - SDF3Evaluate(sdf, v3(p.x, p.y - step, p.z)),
+		SDF3Evaluate(sdf, v3(p.x, p.y, p.z + step)) - SDF3Evaluate(sdf, v3(p.x, p.y, p.z - step))
+	);
 	return vec3Unit(gradient);
 }
 

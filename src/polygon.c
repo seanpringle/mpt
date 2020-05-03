@@ -26,12 +26,12 @@ static double polygonEvaluate(void *p, vec2 pos) {
 
 static circle_t polygonBounds(void *p) {
 	struct state *s = p;
-	return (circle_t){Zero2, s->r*2}; // *2?
+	return (circle_t){Zero2, s->r};
 }
 
-SDF2 polygon(int n, double r) {
+SDF2 polygon(int n, double d) {
 	struct state *s = allot(sizeof(struct state));
 	s->n = n;
-	s->r = r;
+	s->r = d/2;
 	return (SDF2){polygonEvaluate, polygonBounds(s), s};
 }

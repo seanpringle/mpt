@@ -21,7 +21,7 @@ static double hexagramEvaluate(void *ptr, vec2 p) {
 
 static circle_t hexagramBounds(void *p) {
 	struct state *s = p;
-	return (circle_t){Zero2, s->r*2}; //*2?
+	return (circle_t){Zero2, s->r*2};
 }
 
 SDF2 hexagram(double diameter) {

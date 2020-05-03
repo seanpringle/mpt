@@ -101,7 +101,7 @@ bool march(ray_t ray, object_t *bypass, object_t **thing, vec3 *hit) {
 
 	// refracted rays bypass one object, then act normally
 	while (bypass != NULL) {
-		double dist = bypass->sdf.evaluate(bypass->sdf.context, pos);
+		double dist = SDF3Evaluate(bypass->sdf, pos);
 		if (dist > 0) break;
 
 		dist = MAX(fabs(dist), scene.threshold);
@@ -142,7 +142,13 @@ bool march(ray_t ray, object_t *bypass, object_t **thing, vec3 *hit) {
 
 	if (count > 0) {
 		// now behave like a path tracer and evaluate SDFs
-		while (vec3Len(vec3Sub(pos, ray.origin)) < scene.horizon) {
+		while (
+			pos.x < scene.horizon && pos.x > -scene.horizon &&
+			pos.y < scene.horizon && pos.y > -scene.horizon &&
+			pos.z < scene.horizon && pos.z > -scene.horizon
+		){
+		//while (vec3Len(vec3Sub(pos, ray.origin)) < scene.horizon) {
+		//while (vec3Len(pos) < scene.horizon) {
 			object_t *near = NULL;
 			double dist = 0;
 
@@ -154,7 +160,7 @@ bool march(ray_t ray, object_t *bypass, object_t **thing, vec3 *hit) {
 						continue;
 					}
 				}
-				double d = t->sdf.evaluate(t->sdf.context, pos);
+				double d = SDF3Evaluate(t->sdf, pos);
 				if (d < dist || near == NULL) {
 					near = t;
 					dist = d;

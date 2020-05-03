@@ -1,6 +1,7 @@
 
 #include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "vec3.h"
 
 double vec3Len(vec3 va) {

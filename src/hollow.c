@@ -9,7 +9,7 @@ struct state {
 
 static double hollowEvaluate(void *ptr, vec3 p) {
 	struct state *s = ptr;
-	return abs(s->sdf.evaluate(s->sdf.context, p)) - s->thickness;
+	return abs(SDF3Evaluate(s->sdf, p)) - s->thickness;
 }
 
 static sphere_t hollowBounds(void *p) {

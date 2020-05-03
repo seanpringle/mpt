@@ -7,6 +7,8 @@ typedef struct {
 	void *context;
 } SDF3;
 
+double SDF3Evaluate(SDF3 sdf, vec3 p);
+
 vec3 SDF3Normal(SDF3 sdf, vec3 p);
 
 double sphereDistance(vec3 center, double radius, vec3 pos);

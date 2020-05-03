@@ -9,7 +9,7 @@ struct state {
 
 static double roundedEvaluate(void *p, vec3 pos) {
 	struct state *s = p;
-	return s->sdf.evaluate(s->sdf.context, pos) - s->r;
+	return SDF3Evaluate(s->sdf, pos) - s->r;
 }
 
 static sphere_t roundedBounds(void *p) {
