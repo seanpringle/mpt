@@ -2,6 +2,16 @@
 #include "common.h"
 #include <threads.h>
 
+float randomNormalized(struct random_data *rnd) {
+	int r = 0;
+	assert(0 == random_r(rnd, &r));
+	return (float)(r%1000) / 1000.0;
+}
+
+void prepare() {
+	srand(scene.seed);
+}
+
 void object(material_t mat, SDF3 sdf) {
 	object_t *o = allot(sizeof(object_t));
 	o->sdf = sdf;
@@ -37,18 +47,23 @@ static int workerRun(void *context) {
 	memset(&rnd, 0, sizeof(rnd));
 	assert(0 == initstate_r(job->seed, state, sizeof(state), &rnd));
 
+	const int grid = 3;
+	const double cell = 1.0 / (double)grid;
+
 	for (int y = 0; y < scene.height; y++) {
 		for (int x = 0; x < scene.width; x++) {
-			for (int sample = 0; sample < scene.samples; sample++) {
-				double u = randomNormalized(&rnd);
-				double v = randomNormalized(&rnd);
-				ray_t ray = emit(x, y, scene.width, scene.height, u, v, &rnd);
-				Color color; int bounces; double alpha;
-				trace(ray, 0, NULL, &color, &bounces, &alpha);
-				pixel_t *pixel = &job->raster[y*scene.width+x];
-				pixel->color = colorAdd(pixel->color, color);
-				pixel->alpha += alpha;
-				pixel->rays++;
+			for (int cy = 0; cy < grid; cy++) {
+				for (int cx = 0; cx < grid; cx++) {
+					double u = (double)x + (((double)cx * cell) + (cell/2.0)) + ((randomNormalized(&rnd)-0.5) * cell);
+					double v = (double)y + (((double)cy * cell) + (cell/2.0)) + ((randomNormalized(&rnd)-0.5) * cell);
+					ray_t ray = emit(u, v, scene.width, scene.height, &rnd);
+					Color color; int bounces; double alpha;
+					trace(ray, 0, NULL, &color, &bounces, &alpha);
+					pixel_t *pixel = &job->raster[y*scene.width+x];
+					pixel->color = colorAdd(pixel->color, color);
+					pixel->alpha += alpha;
+					pixel->rays++;
+				}
 			}
 		}
 	}
@@ -86,7 +101,7 @@ static NRGBA nrgba(int x, int y) {
 	// gamma correction
 	c = (Color){sqrt(c.r), sqrt(c.g), sqrt(c.b)};
 
-	NRGBA rgba = {0,0,0,0};
+	NRGBA nrgba = {0,0,0,0};
 
 	if (c.r > 0 || c.g > 0 || c.b > 0) {
 		double alpha = pixel.alpha / (double)pixel.rays;
@@ -103,10 +118,10 @@ static NRGBA nrgba(int x, int y) {
 		uint8_t g = MAX(0, MIN((double)(0xff), c.g*(double)(0xff)));
 		uint8_t b = MAX(0, MIN((double)(0xff), c.b*(double)(0xff)));
 		uint8_t a = MAX(0, MIN((double)(0xff), alpha*(double)(0xff)));
-		rgba = (NRGBA){r, g, b, a};
+		nrgba = (NRGBA){r, g, b, a};
 	}
 
-	return rgba;
+	return nrgba;
 }
 
 uint32_t* output() {

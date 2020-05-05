@@ -22,14 +22,6 @@ Color colorAdd(Color ca, Color cb) {
 	return (Color){ .r = ca.r + cb.r, .g = ca.g + cb.g, .b = ca.b + cb.b };
 }
 
-Color colorMin(Color ca, Color cb) {
-	return (Color){ .r = ca.r < cb.r ? ca.r: cb.r, .g = ca.g < cb.g ? ca.g: cb.g, .b = ca.b < cb.b ? ca.b: cb.b };
-}
-
-Color colorMax(Color ca, Color cb) {
-	return (Color){ .r = ca.r > cb.r ? ca.r: cb.r, .g = ca.g > cb.g ? ca.g: cb.g, .b = ca.b > cb.b ? ca.b: cb.b };
-}
-
 double colorBrightness(Color c) {
 	return 0.299*c.r + 0.587*c.g + 0.114*c.b;
 }

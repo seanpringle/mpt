@@ -8,6 +8,10 @@ double SDF2Evaluate(SDF2 sdf, vec2 p) {
 	return sdf.evaluate(sdf.context, p);
 }
 
+double circleDistance(vec2 center, double radius, vec2 pos) {
+	return len(sub(pos, center)) - radius;
+}
+
 struct circle {
 	double radius;
 };

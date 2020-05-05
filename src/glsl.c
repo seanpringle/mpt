@@ -14,23 +14,23 @@ double dneg(double d) {
 }
 
 int imax(int a, int b) {
-	return MAX(a, b);
+	return a > b ? a: b;
 }
 
 int imin(int a, int b) {
-	return MIN(a, b);
+	return a < b ? a: b;
 }
 
 double dmax(double a, double b) {
-	return MAX(a, b);
+	return a > b ? a: b;
 }
 
 double dmin(double a, double b) {
-	return MIN(a, b);
+	return a < b ? a: b;
 }
 
 double dclamp(double val, double low, double high) {
-	return MIN(high, MAX(low, val));
+	return dmin(high, dmax(low, val));
 }
 
 double dround(double val) {

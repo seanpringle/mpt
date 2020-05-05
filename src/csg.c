@@ -74,16 +74,11 @@ static double unionEvaluate(void *p, vec3 pos) {
 	return dist;
 }
 
-SDF3 combine(int count, ...) {
-	va_list aa;
-	va_start(aa, count);
+SDF3 combineSDFs(int count, SDF3 *sdfs) {
 	struct CSG *s = allot(sizeof(struct CSG));
 	s->count = count;
 	s->sdfs = allot(count * sizeof(SDF3));
-	for (int i = 0; i < count; i++) {
-		s->sdfs[i] = va_arg(aa, SDF3);
-	}
-	va_end(aa);
+	memmove(s->sdfs, sdfs, count * sizeof(SDF3));
 	return (SDF3){unionEvaluate, csgBounds(s), s};
 }
 
@@ -112,16 +107,11 @@ static double differenceEvaluate(void *p, vec3 pos) {
 	return dist;
 }
 
-SDF3 subtract(int count, ...) {
-	va_list aa;
-	va_start(aa, count);
+SDF3 subtractSDFs(int count, SDF3 *sdfs) {
 	struct CSG *s = allot(sizeof(struct CSG));
 	s->count = count;
 	s->sdfs = allot(count * sizeof(SDF3));
-	for (int i = 0; i < count; i++) {
-		s->sdfs[i] = va_arg(aa, SDF3);
-	}
-	va_end(aa);
+	memmove(s->sdfs, sdfs, count * sizeof(SDF3));
 	return (SDF3){differenceEvaluate, csgBounds(s), s};
 }
 
@@ -147,15 +137,10 @@ static double intersectionEvaluate(void *p, vec3 pos) {
 	return dist;
 }
 
-SDF3 intersect(int count, ...) {
-	va_list aa;
-	va_start(aa, count);
+SDF3 intersectSDFs(int count, SDF3 *sdfs) {
 	struct CSG *s = allot(sizeof(struct CSG));
 	s->count = count;
 	s->sdfs = allot(count * sizeof(SDF3));
-	for (int i = 0; i < count; i++) {
-		s->sdfs[i] = va_arg(aa, SDF3);
-	}
-	va_end(aa);
+	memmove(s->sdfs, sdfs, count * sizeof(SDF3));
 	return (SDF3){intersectionEvaluate, csgBounds(s), s};
 }

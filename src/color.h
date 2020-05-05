@@ -12,6 +12,9 @@ typedef struct {
 #define Black (Color){0.001,0.001,0.001}
 #define Naught (Color){0,0,0}
 
+#define isNaught(c) (c.r < 0.000001 && c.g < 0.000001 && c.b < 0.000001)
+
+// non-alpha-premultiplied
 typedef struct {
 	uint8_t r, g, b, a;
 } NRGBA;
@@ -25,10 +28,6 @@ Color colorDiv(Color ca, Color cb);
 Color colorSub(Color ca, Color cb);
 
 Color colorAdd(Color ca, Color cb);
-
-Color colorMin(Color ca, Color cb);
-
-Color colorMax(Color ca, Color cb);
 
 double colorBrightness(Color c);
 

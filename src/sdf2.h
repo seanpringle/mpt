@@ -9,6 +9,8 @@ typedef struct {
 
 double SDF2Evaluate(SDF2 sdf, vec2 p);
 
+double circleDistance(vec2 center, double radius, vec2 pos);
+
 SDF2 circle(double diameter);
 
 SDF2 rectangle(double x, double y);

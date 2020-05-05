@@ -23,6 +23,7 @@ double dround(double val);
 #define abs(v) _Generic((v), vec2: vec2Abs, vec3: vec3Abs, int: iabs, double: fabs)(v)
 #define neg(v) _Generic((v), vec2: vec2Neg, vec3: vec3Neg, int: ineg, double: dneg)(v)
 #define len(v) _Generic((v), vec2: vec2Len, vec3: vec3Len)(v)
+#define unit(v) _Generic((v), vec2: vec2Unit, vec3: vec3Unit)(v)
 #define scale(v,s) _Generic((v), vec2: vec2Scale, vec3: vec3Scale)(v,s)
 #define dot(a,b) _Generic((a), vec2: vec2Dot, vec3: vec3Dot)(a,b)
 #define add(a,b) _Generic((a), vec2: vec2Add, vec3: vec3Add)(a,b)

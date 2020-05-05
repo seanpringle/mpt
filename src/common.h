@@ -33,7 +33,7 @@
 
 #define notef(...) { fprintf(stderr, __VA_ARGS__); fputc('\n', stderr); }
 #define fatalf(...) { notef(__VA_ARGS__); exit(EXIT_FAILURE); }
-#define assertf(cond,...) assertf((cond) || ({ notef(__VA_ARGS__); false; }))
+#define assertf(cond,...) assert((cond) || ({ notef(__VA_ARGS__); false; }))
 #define ensuref(cond,...) if (!(cond)) { notef(__VA_ARGS__); exit(EXIT_FAILURE); }
 
 void* allot(size_t);
@@ -84,14 +84,15 @@ typedef struct {
 struct _material_t;
 struct _object_t;
 
-typedef bool (*materiallight)(void*, Color*);
-typedef bool (*materialScatter)(void*, ray_t, struct _object_t*, vec3, int, ray_t*, Color*);
-
 typedef struct _material_t {
+	bool light;
 	bool invisible;
-	materiallight light;
-	materialScatter scatter;
-	void *context;
+	bool diffuse;
+	bool specular;
+	bool dielectric;
+	Color color;
+	double roughness;
+	double refractiveIndex;
 } material_t;
 
 typedef struct _object_t {
@@ -101,11 +102,15 @@ typedef struct _object_t {
 } object_t;
 
 typedef struct {
-	int64_t seed;
+	int count;
+	object_t **objects;
+} group_t;
+
+typedef struct {
+	int seed;
 	int width; // in pixels
 	int height; // in pixels
 	int passes; // number of render passes
-	int samples; // number of jittered samples per pixel
 	int bounces; // max shadow ray bounces
 	double horizon; // max scene distance from 0,0,0 to limit marching rays
 	double threshold; // distance from SDF considered close enough to be a hit
@@ -114,6 +119,7 @@ typedef struct {
 	double shadowL; // shadow alpha lower limit on invisible surfaces (prenumbra cut-off)
 	double shadowD; // shadow darkness (light brightness multipler)
 	double shadowR; // shadow sharpness (light radius multipler)
+	bool experiment;
 } scene_t;
 
 extern scene_t scene;
@@ -125,6 +131,8 @@ extern pixel_t *raster;
 float randomNormalized(struct random_data *rnd);
 
 vec3 pickVec3(struct random_data *rnd);
+
+bool bounce(ray_t ray, object_t *object, vec3 hit, ray_t *bounced);
 
 material_t matt(Color c);
 
@@ -140,6 +148,8 @@ void object(material_t, SDF3);
 
 uint32_t* output();
 
+void denoise(pixel_t *r);
+
 void render(int workers);
 
 void trace(ray_t ray, int depth, object_t *bypass, Color *rcolor, int *rbounces, double *ralpha);
@@ -148,4 +158,10 @@ bool march(ray_t ray, object_t *bypass, object_t **thing, vec3 *hit);
 
 void perspective(vec3 lookFrom, vec3 lookAt, vec3 vup, double vfov, vec3 focus, double aperture);
 
-ray_t emit(int imageX, int imageY, int imageW, int imageH, double jitterU, double jitterV, struct random_data *rnd);
+ray_t emit(double imageX, double imageY, int imageW, int imageH, struct random_data *rnd);
+
+group_t neighbours(vec3 pos);
+
+void prepare();
+
+void script(int argc, char **argv);

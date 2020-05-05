@@ -12,13 +12,13 @@ void perspective(vec3 lookFrom, vec3 lookAt, vec3 vup, double vfov, vec3 focus, 
 	c->aperture = aperture;
 }
 
-ray_t emit(int imageX, int imageY, int imageW, int imageH, double jitterU, double jitterV, struct random_data *rnd) {
+ray_t emit(double imageX, double imageY, int imageW, int imageH, struct random_data *rnd) {
 	camera_t *c = &camera;
 
 	double aspect = (double)imageW / (double)imageH;
 
-	double px = (((double)imageX+jitterU-0.5) / ((double)imageW-1)) * 2 - 1;
-	double py = (((double)imageY+jitterV-0.5) / ((double)imageH-1)) * 2 - 1;
+	double px = (imageX / ((double)imageW-1)) * 2 - 1;
+	double py = (imageY / ((double)imageH-1)) * 2 - 1;
 
 	vec3 direction = vec3Unit(
 		vec3Add(vec3Add(vec3Scale(c->w, c->m), vec3Scale(c->u, -px * aspect)), vec3Scale(c->v, -py))
