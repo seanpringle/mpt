@@ -106,5 +106,5 @@ material_t glass(Color c, double refractiveIndex) {
 }
 
 material_t shadows() {
-	return (material_t){.invisible = true, .diffuse = true};
+	return (material_t){.invisible = true, .diffuse = true, .color = Black};
 }

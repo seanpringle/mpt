@@ -21,6 +21,10 @@ v3,rgb = (function()
 		scale = function(va,mul)
 			return v3(va[1]*mul, va[2]*mul, va[3]*mul)
 		end,
+		rotate = function(va,axis,deg)
+			local x,y,z = _v3rotate(axis,deg,va)
+			return v3(x,y,z)
+		end,
 	}
 
 	local rgblib = {
@@ -63,7 +67,6 @@ function scene(t)
 	local horizon   = t.horizon   or 100000
 	local threshold = t.threshold or 0.0001
 	local ambient   = t.ambient   or naught
-	local path      = t.path      or "out.png"
 
 	for i = 1,#args do
 		if args[i] == "--width" then
@@ -81,15 +84,6 @@ function scene(t)
 		if args[i] == "--seed" then
 			seed = tonumber(args[i+1])
 		end
-		if args[i] == "--horizon" then
-			horizon = tonumber(args[i+1])
-		end
-		if args[i] == "--threshold" then
-			threshold = tonumber(args[i+1])
-		end
-		if args[i] == "--path" then
-			path = args[i+1]
-		end
 	end
 
 	_scene(
@@ -101,7 +95,10 @@ function scene(t)
 		horizon,
 		threshold,
 		ambient,
-		path
+		t.shadowH or 0,
+		t.shadowL or 0,
+		t.shadowD or 0,
+		t.shadowR or 0
 	)
 end
 
@@ -114,6 +111,27 @@ function perspective(t)
 		t.focus    or zero3,
 		t.aperture or 0
 	)
+end
+
+function preview(horizon)
+	scene({
+		width     = 512,
+		height    = 512,
+		passes    = 1,
+		bounces   = 4,
+		seed      = 123456789,
+		horizon   = horizon,
+		threshold = 0.0001,
+		ambient   = white:scale(0.05),
+	})
+	perspective({
+		from     = v3(0, -4000, 4000),
+		look     = v3(0, 0, 500),
+		up       = Z,
+		fov      = 40,
+		focus    = zero3,
+		aperture = 0.0,
+	})
 end
 
 function rotateX(deg, sdf)
@@ -148,6 +166,12 @@ function cylinderR(h, d, r)
 	return rounded(r, cylinder(h-r*2, d-r*2))
 end
 
+function triprism(h, w)
+	return extrude(h, triangle(
+		v2(0, w/2), v2(-w/2, -w/2), v2(w/2, -w/2)
+	))
+end
+
 steel     = metal(rgb(0.4, 0.4, 0.4), 0.95)
 stainless = metal(rgb(0.4, 0.4, 0.4), 0.3)
 gold      = metal(rgb(0.93, 0.78, 0.31), 0.0)
@@ -161,3 +185,9 @@ function workbench(size)
 	)
 end
 
+function spacetime(size)
+	object(
+		shadows(),
+		translateZ(-5, cube(size, size, 10))
+	)
+end

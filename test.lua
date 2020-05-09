@@ -2,12 +2,12 @@
 scene({
 	width     = 1920,
 	height    = 1080,
-	passes    = 0,
-	bounces   = 16,
+	passes    = 500,
+	bounces   = 10,
 	seed      = 123456789,
 	horizon   = 100000,
 	threshold = 0.0001,
-	ambient   = white:scale(0.05),
+	ambient   = white:scale(0.025),
 })
 
 perspective({
@@ -22,7 +22,7 @@ perspective({
 workbench(25000)
 
 object(
-	light(white:shine(4)),
+	light(white:shine(5)),
 	translate(v3(-7500, 0, 20000), sphere(20000))
 )
 
@@ -94,40 +94,40 @@ for i = 0,8,1 do
 	)
 end
 
-function things(relative, material)
+function things(position, material)
 	object(material,
-		translate(relative:add(v3(0,0,500)), sphere(1000))
+		translate(position:add(v3(0,0,500)), sphere(1000))
 	)
 
 	object(material,
-		translate(relative:add(v3(0,2000,500)), cube(1000, 1000, 1000))
+		translate(position:add(v3(0,2000,500)), cube(1000, 1000, 1000))
 	)
 
 	object(material,
-		translate(relative:add(v3(-1500,0,500)), cylinder(1000, 1000))
+		translate(position:add(v3(-1500,0,500)), cylinder(1000, 1000))
 	)
 
 	object(material,
-		translate(relative:add(v3(1500,0,600)), rotateX(90, torus(1000, 200)))
+		translate(position:add(v3(1500,0,600)), rotateX(90, torus(1000, 200)))
 	)
 
 	object(material,
-		translate(relative:add(v3(-1500,2000,500)), pyramid(1000, 1000))
+		translate(position:add(v3(-1500,2000,500)), pyramid(1000, 1000))
 	)
 
 	object(material,
-		translate(relative:add(v3(1500,2000,500)), cone(1000, 1000))
+		translate(position:add(v3(1500,2000,500)), cone(1000, 1000))
 	)
 
 	for i = 3,8,1 do
 		object(material,
-			translate(relative:add(v3((i-3)*600-1450, -1250, 250)), extrude(500, polygon(i, 500)))
+			translate(position:add(v3((i-3)*600-1450, -1250, 250)), extrude(500, polygon(i, 500)))
 		)
 	end
 end
 
-things(v3(-2750, -2750, 0), steel)
-things(v3(2750, -2750, 0), copper)
+things(v3(-2750, -2800, 0), steel)
+things(v3(2750, -2800, 0), copper)
 things(v3(-3000, 2250, 0), stainless)
 things(v3(3000, 2250, 0), gold)
 
@@ -139,3 +139,5 @@ for i = 0,9,1 do
 		)
 	end
 end
+
+render("test.png")

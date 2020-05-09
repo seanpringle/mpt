@@ -122,11 +122,17 @@ typedef struct {
 	bool experiment;
 } scene_t;
 
+struct matrix44 {
+	double x00, x01, x02, x03;
+	double x10, x11, x12, x13;
+	double x20, x21, x22, x23;
+	double x30, x31, x32, x33;
+};
+
 extern scene_t scene;
 extern camera_t camera;
 extern object_t *objects;
 extern int objectCount;
-extern pixel_t *raster;
 
 float randomNormalized(struct random_data *rnd);
 
@@ -146,11 +152,9 @@ material_t shadows();
 
 void object(material_t, SDF3);
 
-uint32_t* output();
+uint32_t* output(pixel_t *raster);
 
-void denoise(pixel_t *r);
-
-void render(int workers);
+void render(pixel_t *raster, int workers);
 
 void trace(ray_t ray, int depth, object_t *bypass, Color *rcolor, int *rbounces, double *ralpha);
 
@@ -165,3 +169,9 @@ group_t neighbours(vec3 pos);
 void prepare();
 
 void script(int argc, char **argv);
+
+struct matrix44 translation(vec3 v);
+
+struct matrix44 rotation(vec3 v, double a);
+
+vec3 matrixMul(struct matrix44 a, vec3 b);

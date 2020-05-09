@@ -21,19 +21,21 @@ void object(material_t mat, SDF3 sdf) {
 	objectCount++;
 }
 
-static void merge(pixel_t *r) {
+static void merge(pixel_t *dst, pixel_t *src) {
 	for (int y = 0; y < scene.height; y++) {
 		for (int x = 0; x < scene.width; x++) {
-			pixel_t *spixel = &raster[y*scene.width+x];
-			pixel_t *rpixel = &r[y*scene.width+x];
-			spixel->color = colorAdd(spixel->color, rpixel->color);
-			spixel->rays += rpixel->rays;
-			spixel->alpha += rpixel->alpha;
+			pixel_t *dpixel = &dst[y*scene.width+x];
+			pixel_t *spixel = &src[y*scene.width+x];
+			dpixel->color = colorAdd(dpixel->color, spixel->color);
+			dpixel->rays += spixel->rays;
+			dpixel->alpha += spixel->alpha;
 		}
 	}
 }
 
 struct workerJob {
+	_Atomic bool done;
+	_Atomic float progress;
 	pixel_t *raster;
 	int seed;
 };
@@ -51,6 +53,7 @@ static int workerRun(void *context) {
 	const double cell = 1.0 / (double)grid;
 
 	for (int y = 0; y < scene.height; y++) {
+		job->progress = (float)y / (float)scene.height;
 		for (int x = 0; x < scene.width; x++) {
 			for (int cy = 0; cy < grid; cy++) {
 				for (int cx = 0; cx < grid; cx++) {
@@ -67,11 +70,11 @@ static int workerRun(void *context) {
 			}
 		}
 	}
-
+	job->done = true;
 	return 0;
 }
 
-void render(int workers) {
+void render(pixel_t *raster, int workers) {
 	int seed = random();
 
 	thrd_t threads[workers];
@@ -85,14 +88,41 @@ void render(int workers) {
 		thrd_create(&threads[i], workerRun, &jobs[i]);
 	}
 
+ 	if (ttyname(STDOUT_FILENO)) {
+		for (bool done = false; !done; ) {
+			done = true;
+			float progress = 0;
+			for (int i = 0; i < workers; i++) {
+				progress += jobs[i].progress;
+				done = done && jobs[i].done;
+			}
+			progress /= (double)workers;
+			progress = done ? 1: progress;
+
+			int bar = 50;
+			int fill = floor(progress*(float)bar);
+			fprintf(stdout, "\r");
+			for (int i = 0; i < fill; i++) {
+				fprintf(stdout, "*");
+			}
+			for (int i = fill; i < bar; i++) {
+				fprintf(stdout, ".");
+			}
+			fflush(stdout);
+
+			thrd_sleep(&(struct timespec){.tv_sec=1}, NULL);
+		}
+		fprintf(stdout, "\n");
+	}
+
 	for (int i = 0; i < workers; i++) {
 		thrd_join(threads[i], NULL);
-		merge(jobs[i].raster);
+		merge(raster, jobs[i].raster);
 		free(jobs[i].raster);
 	}
 }
 
-static NRGBA nrgba(int x, int y) {
+static NRGBA nrgba(pixel_t *raster, int x, int y) {
 	pixel_t pixel = raster[y*scene.width+x];
 
 	// average
@@ -124,12 +154,12 @@ static NRGBA nrgba(int x, int y) {
 	return nrgba;
 }
 
-uint32_t* output() {
+uint32_t* output(pixel_t *raster) {
 	uint32_t *frame = calloc(scene.width * scene.height, sizeof(uint32_t));
 
 	for (int y = 0; y < scene.height; y++) {
 		for (int x = 0; x < scene.width; x++) {
-			frame[y*scene.width+x] = NRGBAtoARGB32(nrgba(x, y));
+			frame[y*scene.width+x] = NRGBAtoARGB32(nrgba(raster, x, y));
 		}
 	}
 

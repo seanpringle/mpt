@@ -8,6 +8,7 @@
 #include <sys/sysinfo.h>
 
 size_t used = 0;
+size_t mark = 0;
 uint8_t buffer[1024*1024];
 
 void* allot(size_t n) {
@@ -23,18 +24,9 @@ void* allot(size_t n) {
 
 scene_t scene;
 camera_t camera;
-pixel_t *raster;
 object_t *objects;
 int objectCount;
-char *outPath;
-
-void reset() {
-	used = 0;
-	free(raster);
-	raster = NULL;
-	objects = NULL;
-	objectCount = 0;
-}
+int threads;
 
 #define lua_ensuref(L,cond,...) ({ \
 	if (!(cond)) { \
@@ -46,7 +38,7 @@ void reset() {
 })
 
 void require_args(lua_State *lua, const char *func, int args) {
-  ensuref(lua_gettop(lua) >= args, "%s() expected %d arguments", func, args);
+  lua_ensuref(lua, lua_gettop(lua) >= args, "%s() expected %d arguments", func, args);
 }
 
 material_t pop_material(lua_State *lua) {
@@ -131,8 +123,10 @@ SDF3 pop_sdf3(lua_State *lua) {
 }
 
 int wrap_scene(lua_State *lua) {
-	outPath = strdup(lua_tostring(lua, -1));
-	lua_pop(lua, 1);
+	scene.shadowR = pop_double(lua);
+	scene.shadowD = pop_double(lua);
+	scene.shadowL = pop_double(lua);
+	scene.shadowH = pop_double(lua);
 
 	scene.ambient = pop_color(lua);
 	scene.threshold = pop_double(lua);
@@ -142,6 +136,10 @@ int wrap_scene(lua_State *lua) {
 	scene.passes = pop_double(lua);
 	scene.height = pop_double(lua);
 	scene.width = pop_double(lua);
+
+	used = mark;
+	objectCount = 0;
+	objects = NULL;
 	return 0;
 }
 
@@ -414,31 +412,45 @@ int wrap_intersect(lua_State *lua) {
 	return 1;
 }
 
-void execute() {
+int wrap_rotation(lua_State *lua) {
+	vec3 pos = pop_vec3(lua);
+	double deg = pop_double(lua);
+	vec3 axis = pop_vec3(lua);
+	vec3 res = matrixMul(rotation(axis, deg), pos);
+	lua_pushnumber(lua, res.x);
+	lua_pushnumber(lua, res.y);
+	lua_pushnumber(lua, res.z);
+	return 3;
+}
+
+void execute(const char *outPath) {
  	prepare();
 
-	int workers = get_nprocs();
-	int batches = ceil((float)scene.passes/(float)workers);
+	int batches = ceil((float)scene.passes/(float)threads);
 
- 	notef("seed %d", scene.seed);
- 	notef("width %d", scene.width);
- 	notef("height %d", scene.height);
- 	notef("passes %d", scene.passes);
- 	notef("bounces %d", scene.bounces);
- 	notef("horizon %f", scene.horizon);
- 	notef("threshold %f", scene.threshold);
- 	notef("objects %d", objectCount);
- 	notef("workers %d", workers);
- 	notef("batches %d", batches);
+	bool tty = ttyname(STDOUT_FILENO) != NULL;
 
-	raster = calloc(scene.width * scene.height, sizeof(pixel_t));
+ 	if (tty) {
+		fprintf(stdout, "seed      : %d\n", scene.seed);
+		fprintf(stdout, "width     : %d\n", scene.width);
+		fprintf(stdout, "height    : %d\n", scene.height);
+		fprintf(stdout, "passes    : %d\n", scene.passes);
+		fprintf(stdout, "bounces   : %d\n", scene.bounces);
+		fprintf(stdout, "horizon   : %d\n", (int)floor(scene.horizon));
+		fprintf(stdout, "threshold : %f\n", scene.threshold);
+		fprintf(stdout, "objects   : %d\n", objectCount);
+		fprintf(stdout, "threads   : %d\n", threads);
+	}
+
+	pixel_t *raster = calloc(scene.width * scene.height, sizeof(pixel_t));
 
 	for (int batch = 0; scene.passes == 0 || batch < batches; batch++) {
-		fprintf(stderr, "batch %d of %d\n", batch+1, batches);
+ 		if (tty) {
+			fprintf(stdout, "batch %d of %d %s\n", batch+1, batches, outPath);
+		}
 
-		render(workers);
-
-		uint32_t *frame = output();
+		render(raster, threads);
+		uint32_t *frame = output(raster);
 
 		cairo_surface_t *surface = cairo_image_surface_create_for_data(
 			(unsigned char*)frame,
@@ -453,6 +465,15 @@ void execute() {
 
 		free(frame);
 	}
+
+	free(raster);
+}
+
+int wrap_execute(lua_State *lua) {
+	const char *path = lua_tostring(lua, -1);
+	execute(path);
+	lua_pop(lua, 1);
+	return 0;
 }
 
 int traceback(lua_State *lua) {
@@ -466,7 +487,16 @@ int traceback(lua_State *lua) {
 }
 
 int main(int argc, char **argv) {
-  reset();
+
+	threads = get_nprocs();
+
+	for (int i = 0; i < argc; i++) {
+		if (!strcmp(argv[i], "--threads")) {
+			ensuref(i < argc-2, "usage --threads N");
+			threads = strtol(argv[i+1], NULL, 10);
+			continue;
+		}
+	}
 
 	lua_State *lua = luaL_newstate();
 	luaL_openlibs(lua);
@@ -484,6 +514,12 @@ int main(int argc, char **argv) {
 
 	lua_pushcfunction(lua, wrap_perspective);
 	lua_setglobal(lua, "_perspective");
+
+	lua_pushcfunction(lua, wrap_rotation);
+	lua_setglobal(lua, "_v3rotate");
+
+	lua_pushcfunction(lua, wrap_execute);
+	lua_setglobal(lua, "render");
 
 	lua_pushcfunction(lua, wrap_object);
 	lua_setglobal(lua, "object");
@@ -591,6 +627,7 @@ int main(int argc, char **argv) {
 		fatalf("abort parse time: %s", lua_tostring(lua, -1));
 	}
 
+	mark = used;
 	char *source = argv[argc-1];
 
 	rc = luaL_loadfile(lua, source);
@@ -600,10 +637,6 @@ int main(int argc, char **argv) {
 		fatalf("abort parse time: %s", lua_tostring(lua, -1));
 	}
 
-	execute();
-
 	lua_close(lua);
-	reset();
-
 	return EXIT_SUCCESS;
 }

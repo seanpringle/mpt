@@ -1,15 +1,7 @@
 
 #include "common.h"
 
-struct matrix44 {
-	double x00, x01, x02, x03;
-	double x10, x11, x12, x13;
-	double x20, x21, x22, x23;
-	double x30, x31, x32, x33;
-};
-
-__attribute__((hot))
-static vec3 matrixMul(struct matrix44 a, vec3 b) {
+inline vec3 matrixMul(struct matrix44 a, vec3 b) {
 	double x = a.x00*b.x + a.x01*b.y + a.x02*b.z + a.x03;
 	double y = a.x10*b.x + a.x11*b.y + a.x12*b.z + a.x13;
 	double z = a.x20*b.x + a.x21*b.y + a.x22*b.z + a.x23;
@@ -55,7 +47,7 @@ static struct matrix44 inverse(struct matrix44 a) {
 	return m;
 }
 
-static struct matrix44 translation(vec3 v) {
+struct matrix44 translation(vec3 v) {
 	return (struct matrix44){
 		1, 0, 0, v.x,
 		0, 1, 0, v.y,
@@ -64,7 +56,7 @@ static struct matrix44 translation(vec3 v) {
 	};
 }
 
-static struct matrix44 rotation(vec3 v, double a) {
+struct matrix44 rotation(vec3 v, double a) {
 	a *= M_PI / 180.0;
 	v = vec3Unit(v);
 	double s = sin(a);
