@@ -59,7 +59,7 @@ static int workerRun(void *context) {
 				for (int cx = 0; cx < grid; cx++) {
 					double u = (double)x + (((double)cx * cell) + (cell/2.0)) + ((randomNormalized(&rnd)-0.5) * cell);
 					double v = (double)y + (((double)cy * cell) + (cell/2.0)) + ((randomNormalized(&rnd)-0.5) * cell);
-					ray_t ray = emit(u, v, scene.width, scene.height, &rnd);
+					ray_t ray = camera.emit(u, v, scene.width, scene.height, &rnd);
 					Color color; int bounces; double alpha;
 					trace(ray, 0, NULL, &color, &bounces, &alpha);
 					pixel_t *pixel = &job->raster[y*scene.width+x];

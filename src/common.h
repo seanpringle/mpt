@@ -54,12 +54,15 @@ typedef struct {
 
 typedef struct {
 	vec3 origin;
+	vec3 target;
 	vec3 u;
 	vec3 v;
 	vec3 w;
 	double m;
 	double focus;
 	double aperture;
+	double scale;
+	ray_t (*emit)(double imageX, double imageY, int imageW, int imageH, struct random_data *rnd);
 } camera_t;
 
 typedef struct {
@@ -86,6 +89,7 @@ struct _object_t;
 
 typedef struct _material_t {
 	bool light;
+	bool lightDirect;
 	bool invisible;
 	bool diffuse;
 	bool specular;
@@ -161,6 +165,8 @@ void trace(ray_t ray, int depth, object_t *bypass, Color *rcolor, int *rbounces,
 bool march(ray_t ray, object_t *bypass, object_t **thing, vec3 *hit);
 
 void perspective(vec3 lookFrom, vec3 lookAt, vec3 vup, double vfov, vec3 focus, double aperture);
+
+void orthographic(vec3 lookFrom, vec3 lookAt, vec3 vup, double scale);
 
 ray_t emit(double imageX, double imageY, int imageW, int imageH, struct random_data *rnd);
 

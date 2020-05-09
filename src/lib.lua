@@ -113,6 +113,15 @@ function perspective(t)
 	)
 end
 
+function orthographic(t)
+	_orthographic(
+		t.from     or v3(0,-1,-1),
+		t.look     or zero3,
+		t.up       or Z,
+		t.scale    or 1.0
+	)
+end
+
 function preview(horizon)
 	scene({
 		width     = 512,

@@ -154,6 +154,15 @@ int wrap_perspective(lua_State *lua) {
 	return 0;
 }
 
+int wrap_orthographic(lua_State *lua) {
+	double scale = pop_double(lua);
+	vec3 vup = pop_vec3(lua);
+	vec3 lookAt = pop_vec3(lua);
+	vec3 lookFrom = pop_vec3(lua);
+	orthographic(lookFrom, lookAt, vup, scale);
+	return 0;
+}
+
 int wrap_object(lua_State *lua) {
 	SDF3 sdf = pop_sdf3(lua);
 	material_t material = pop_material(lua);
@@ -165,6 +174,14 @@ int wrap_light(lua_State *lua) {
 	Color color = pop_color(lua);
 	material_t *material = lua_newuserdata(lua, sizeof(material_t));
 	*material = light(color);
+	return 1;
+}
+
+int wrap_sun(lua_State *lua) {
+	Color color = pop_color(lua);
+	material_t *material = lua_newuserdata(lua, sizeof(material_t));
+	*material = light(color);
+	material->lightDirect = true;
 	return 1;
 }
 
@@ -423,7 +440,114 @@ int wrap_rotation(lua_State *lua) {
 	return 3;
 }
 
-void execute(const char *outPath) {
+struct frame_t {
+	size_t width;
+	size_t height;
+	uint32_t data;
+};
+
+int frame_png(lua_State *lua) {
+	struct frame_t *frame = lua_touserdata(lua, -1);
+	const char *path = lua_tostring(lua, -2);
+
+	cairo_surface_t *surface = cairo_image_surface_create_for_data(
+		(unsigned char*)(&frame->data),
+		CAIRO_FORMAT_ARGB32,
+		frame->width,
+		frame->height,
+		frame->width*sizeof(uint32_t)
+	);
+
+	ensuref(CAIRO_STATUS_SUCCESS == cairo_surface_write_to_png(surface, path), "%s", path);
+	cairo_surface_destroy(surface);
+	lua_pop(lua, 2);
+	return 0;
+}
+
+int frames_montage(lua_State *lua) {
+	int frames = lua_objlen(lua, -1);
+	int rows = lua_tonumber(lua, -2);
+	int cols = lua_tonumber(lua, -3);
+
+	lua_remove(lua, -2);
+	lua_remove(lua, -2);
+
+	lua_pushnumber(lua, 1);
+	lua_gettable(lua, -2);
+	lua_ensuref(lua, !lua_isnil(lua, -1), "montage expected frame?");
+
+	struct frame_t *subframe = lua_touserdata(lua, -1);
+
+	int subheight = subframe->width;
+	int subwidth = subframe->height;
+
+	lua_pop(lua, 1);
+
+	int width = subwidth*cols;
+	int height = subheight*rows;
+	int pitch = width*sizeof(uint32_t);
+
+	fprintf(stderr, "montage\n");
+	fprintf(stderr, "frames       : %d\n", frames);
+	fprintf(stderr, "frame width  : %d\n", subwidth);
+	fprintf(stderr, "frame height : %d\n", subheight);
+	fprintf(stderr, "sheet width  : %d\n", width);
+	fprintf(stderr, "sheet height : %d\n", height);
+
+	struct frame_t *frame = lua_newuserdata(lua, sizeof(struct frame_t) + (height*pitch));
+	frame->width = width;
+	frame->height = height;
+
+	memset(&frame->data, 0, height*pitch);
+
+	cairo_surface_t *target = cairo_image_surface_create_for_data(
+		(unsigned char*)(&frame->data),
+		CAIRO_FORMAT_ARGB32,
+		frame->width,
+		frame->height,
+		frame->width*sizeof(uint32_t)
+	);
+
+	cairo_t *cr = cairo_create(target);
+
+	for (int i = 0; i < frames; i++) {
+		lua_pushnumber(lua, i+1);
+		lua_gettable(lua, -3);
+		lua_ensuref(lua, !lua_isnil(lua, -1), "montage expected frame?");
+
+		struct frame_t *subframe = lua_touserdata(lua, -1);
+
+		cairo_surface_t *source = cairo_image_surface_create_for_data(
+			(unsigned char*)(&subframe->data),
+			CAIRO_FORMAT_ARGB32,
+			subframe->width,
+			subframe->height,
+			subframe->width*sizeof(uint32_t)
+		);
+
+		int xd = i%cols*subwidth;
+		int yd = i/cols*subheight;
+
+		cairo_set_source_surface(cr, source, xd, yd);
+		cairo_rectangle (cr, xd, yd, subwidth, subheight);
+		cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+		cairo_fill(cr);
+
+		cairo_surface_destroy(source);
+		lua_pop(lua, 1);
+	}
+
+	lua_remove(lua, -2);
+
+	cairo_surface_destroy(target);
+	cairo_destroy(cr);
+
+	return 1;
+}
+
+int wrap_render(lua_State *lua) {
+	const char *path = lua_tostring(lua, -1);
+
  	prepare();
 
 	int batches = ceil((float)scene.passes/(float)threads);
@@ -446,7 +570,7 @@ void execute(const char *outPath) {
 
 	for (int batch = 0; scene.passes == 0 || batch < batches; batch++) {
  		if (tty) {
-			fprintf(stdout, "batch %d of %d %s\n", batch+1, batches, outPath);
+			fprintf(stdout, "batch %d of %d %s\n", batch+1, batches, path);
 		}
 
 		render(raster, threads);
@@ -460,20 +584,27 @@ void execute(const char *outPath) {
 			scene.width*sizeof(uint32_t)
 		);
 
-		ensuref(CAIRO_STATUS_SUCCESS == cairo_surface_write_to_png(surface, outPath), "%s", outPath);
+		ensuref(CAIRO_STATUS_SUCCESS == cairo_surface_write_to_png(surface, path), "%s", path);
 		cairo_surface_destroy(surface);
 
 		free(frame);
 	}
 
-	free(raster);
-}
-
-int wrap_execute(lua_State *lua) {
-	const char *path = lua_tostring(lua, -1);
-	execute(path);
 	lua_pop(lua, 1);
-	return 0;
+
+	size_t bytes = scene.height * scene.width * sizeof(uint32_t);
+	struct frame_t *frame = lua_newuserdata(lua, sizeof(struct frame_t) + bytes);
+	frame->width = scene.width;
+	frame->height = scene.height;
+
+	memset(&frame->data, 0, bytes);
+
+	uint32_t *export = output(raster);
+	memmove(&frame->data, export, bytes);
+
+	free(export);
+	free(raster);
+	return 1;
 }
 
 int traceback(lua_State *lua) {
@@ -515,17 +646,29 @@ int main(int argc, char **argv) {
 	lua_pushcfunction(lua, wrap_perspective);
 	lua_setglobal(lua, "_perspective");
 
+	lua_pushcfunction(lua, wrap_orthographic);
+	lua_setglobal(lua, "_orthographic");
+
 	lua_pushcfunction(lua, wrap_rotation);
 	lua_setglobal(lua, "_v3rotate");
 
-	lua_pushcfunction(lua, wrap_execute);
+	lua_pushcfunction(lua, wrap_render);
 	lua_setglobal(lua, "render");
+
+	lua_pushcfunction(lua, frames_montage);
+	lua_setglobal(lua, "montage");
+
+	lua_pushcfunction(lua, frame_png);
+	lua_setglobal(lua, "png");
 
 	lua_pushcfunction(lua, wrap_object);
 	lua_setglobal(lua, "object");
 
 	lua_pushcfunction(lua, wrap_light);
 	lua_setglobal(lua, "light");
+
+	lua_pushcfunction(lua, wrap_sun);
+	lua_setglobal(lua, "sun");
 
 	lua_pushcfunction(lua, wrap_matt);
 	lua_setglobal(lua, "matt");

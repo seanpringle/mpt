@@ -9,7 +9,7 @@ static Color directLight(ray_t ray, vec3 pos) {
 	for (object_t *t = objects; t != NULL; t = t->next) {
 		material_t material = t->material;
 
-		if (material.light) {
+		if (material.light && material.lightDirect) {
 			sphere_t bounds = t->sdf.bounds;
 			vec3 center = add(bounds.center, scale(pickVec3(ray.rnd), bounds.radius * scene.shadowR));
 			ray_t lr = {.origin = pos, .direction = unit(sub(center, pos)), .rnd = ray.rnd};
