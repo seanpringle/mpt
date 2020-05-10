@@ -61,7 +61,8 @@ typedef struct {
 	double m;
 	double focus;
 	double aperture;
-	double scale;
+	double scaleU;
+	double scaleV;
 	ray_t (*emit)(double imageX, double imageY, int imageW, int imageH, struct random_data *rnd);
 } camera_t;
 
@@ -166,7 +167,7 @@ bool march(ray_t ray, object_t *bypass, object_t **thing, vec3 *hit);
 
 void perspective(vec3 lookFrom, vec3 lookAt, vec3 vup, double vfov, vec3 focus, double aperture);
 
-void orthographic(vec3 lookFrom, vec3 lookAt, vec3 vup, double scale);
+void orthographic(vec3 lookFrom, vec3 lookAt, vec3 vup, double scaleU, double scaleV);
 
 ray_t emit(double imageX, double imageY, int imageW, int imageH, struct random_data *rnd);
 

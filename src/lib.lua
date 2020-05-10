@@ -104,7 +104,7 @@ end
 
 function perspective(t)
 	_perspective(
-		t.from     or v3(0,-1,-1),
+		t.eye      or v3(0,-1,-1),
 		t.look     or zero3,
 		t.up       or Z,
 		t.fov      or 40,
@@ -115,10 +115,11 @@ end
 
 function orthographic(t)
 	_orthographic(
-		t.from     or v3(0,-1,-1),
+		t.eye      or v3(0,-1,-1),
 		t.look     or zero3,
 		t.up       or Z,
-		t.scale    or 1.0
+		t.scaleU   or 1.0,
+		t.scaleV   or 1.0
 	)
 end
 
@@ -134,7 +135,7 @@ function preview(horizon)
 		ambient   = white:scale(0.05),
 	})
 	perspective({
-		from     = v3(0, -4000, 4000),
+		eye      = v3(0, -4000, 4000),
 		look     = v3(0, 0, 500),
 		up       = Z,
 		fov      = 40,

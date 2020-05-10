@@ -51,19 +51,20 @@ ray_t emitOrthographic(double imageX, double imageY, int imageW, int imageH, str
 
 	vec3 origin = c->origin;
 
-	origin = vec3Add(origin, vec3Scale(vec3Scale(c->u, -px * aspect), c->scale));
-	origin = vec3Add(origin, vec3Scale(vec3Scale(c->v, -py), c->scale));
+	origin = vec3Add(origin, vec3Scale(vec3Scale(c->u, -px * aspect), c->scaleU));
+	origin = vec3Add(origin, vec3Scale(vec3Scale(c->v, -py), c->scaleV));
 
 	return (ray_t){ .origin = origin, .direction = direction, .rnd = rnd };
 }
 
-void orthographic(vec3 lookFrom, vec3 lookAt, vec3 vup, double scale) {
+void orthographic(vec3 lookFrom, vec3 lookAt, vec3 vup, double scaleU, double scaleV) {
 	camera_t *c = &camera;
 	c->origin = lookFrom;
 	c->target = lookAt;
 	c->w = vec3Unit(vec3Sub(lookAt, lookFrom));
 	c->u = vec3Unit(vec3Cross(vup, c->w));
 	c->v = vec3Unit(vec3Cross(c->w, c->u));
-	c->scale = scale/2;
+	c->scaleU = scaleU/2;
+	c->scaleV = scaleV/2;
 	c->emit = emitOrthographic;
 }

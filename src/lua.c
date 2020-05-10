@@ -155,11 +155,12 @@ int wrap_perspective(lua_State *lua) {
 }
 
 int wrap_orthographic(lua_State *lua) {
-	double scale = pop_double(lua);
+	double scaleV = pop_double(lua);
+	double scaleU = pop_double(lua);
 	vec3 vup = pop_vec3(lua);
 	vec3 lookAt = pop_vec3(lua);
 	vec3 lookFrom = pop_vec3(lua);
-	orthographic(lookFrom, lookAt, vup, scale);
+	orthographic(lookFrom, lookAt, vup, scaleU, scaleV);
 	return 0;
 }
 
