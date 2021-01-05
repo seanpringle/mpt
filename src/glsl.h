@@ -20,6 +20,8 @@ double dclamp(double val, double low, double high);
 
 double dround(double val);
 
+double dmix(double x, double y, double a);
+
 #define abs(v) _Generic((v), vec2: vec2Abs, vec3: vec3Abs, int: iabs, double: fabs)(v)
 #define neg(v) _Generic((v), vec2: vec2Neg, vec3: vec3Neg, int: ineg, double: dneg)(v)
 #define len(v) _Generic((v), vec2: vec2Len, vec3: vec3Len)(v)
@@ -33,6 +35,7 @@ double dround(double val);
 #define mod(a,b) _Generic((a), vec2: vec2Mod, vec3: vec3Mod)(a,b)
 #define max(a,b) _Generic((a), vec2: vec2Max, vec3: vec3Max, int: imax, double: dmax)(a,b)
 #define min(a,b) _Generic((a), vec2: vec2Min, vec3: vec3Min, int: imin, double: dmin)(a,b)
+#define mix(a,b,c) _Generic((a), double: dmix)(a,b,c)
 #define clamp(a,b,c) _Generic((a), vec3: vec3Clamp, double: dclamp)(a,b,c)
 #define round(a) _Generic((a), vec3: vec3Round, double: dround)(a)
 

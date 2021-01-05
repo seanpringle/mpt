@@ -2,7 +2,7 @@
 scene({
 	width     = 1920,
 	height    = 1080,
-	passes    = 500,
+	passes    = 1,
 	bounces   = 10,
 	seed      = 123456789,
 	horizon   = 100000,
@@ -11,7 +11,7 @@ scene({
 })
 
 perspective({
-	from     = v3(0, -8000, 8000),
+	eye      = v3(0, -8000, 8000),
 	look     = v3(0, -1000, 500),
 	up       = v3(0, 0, 1),
 	fov      = 40,

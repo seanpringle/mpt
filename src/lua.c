@@ -43,6 +43,7 @@ void require_args(lua_State *lua, const char *func, int args) {
 
 material_t pop_material(lua_State *lua) {
 	require_args(lua, __func__, 1);
+	lua_ensuref(lua, !lua_isnil(lua, -1), "expected material");
 	material_t material = *((material_t*)lua_touserdata(lua, -1));
 	lua_pop(lua, 1);
 	return material;
@@ -64,6 +65,13 @@ double pop_double(lua_State *lua) {
 	double d = lua_tonumber(lua, -1);
 	lua_pop(lua, 1);
 	return d;
+}
+
+bool pop_bool(lua_State *lua) {
+	require_args(lua, __func__, 1);
+	bool b = lua_toboolean(lua, -1);
+	lua_pop(lua, 1);
+	return b;
 }
 
 Color pop_color(lua_State *lua) {
@@ -123,6 +131,8 @@ SDF3 pop_sdf3(lua_State *lua) {
 }
 
 int wrap_scene(lua_State *lua) {
+	scene.useAlphaMap = pop_bool(lua);
+
 	scene.shadowR = pop_double(lua);
 	scene.shadowD = pop_double(lua);
 	scene.shadowL = pop_double(lua);
@@ -415,18 +425,45 @@ void make_csg(lua_State *lua, SDF3 (*csg)(int, SDF3*)) {
 	*sdf = csg(count, sdfs);
 }
 
+void make_smooth_csg(lua_State *lua, SDF3 (*csg)(int, SDF3*, double)) {
+	int count = lua_objlen(lua, -1);
+	SDF3 sdfs[count];
+	for (int i = 1; i <= count; i++) {
+		lua_pushnumber(lua, i);
+		lua_gettable(lua, -2);
+		lua_ensuref(lua, !lua_isnil(lua, -1), "CSG nil SDF");
+		sdfs[i-1] = pop_sdf3(lua);
+	}
+	lua_pop(lua, 1);
+	double k = pop_double(lua);
+	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
+	*sdf = csg(count, sdfs, k);
+}
+
 int wrap_combine(lua_State *lua) {
-	make_csg(lua, combineSDFs);
+	if (lua_gettop(lua) > 1) {
+		make_smooth_csg(lua, smoothCombineSDFs);
+	} else {
+		make_csg(lua, combineSDFs);
+	}
 	return 1;
 }
 
 int wrap_subtract(lua_State *lua) {
-	make_csg(lua, subtractSDFs);
+	if (lua_gettop(lua) > 1) {
+		make_smooth_csg(lua, smoothSubtractSDFs);
+	} else {
+		make_csg(lua, subtractSDFs);
+	}
 	return 1;
 }
 
 int wrap_intersect(lua_State *lua) {
-	make_csg(lua, intersectSDFs);
+	if (lua_gettop(lua) > 1) {
+		make_smooth_csg(lua, smoothIntersectSDFs);
+	} else {
+		make_csg(lua, intersectSDFs);
+	}
 	return 1;
 }
 
@@ -510,6 +547,7 @@ int frames_montage(lua_State *lua) {
 	);
 
 	cairo_t *cr = cairo_create(target);
+	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
 
 	for (int i = 0; i < frames; i++) {
 		lua_pushnumber(lua, i+1);
@@ -530,7 +568,7 @@ int frames_montage(lua_State *lua) {
 		int yd = i/cols*subheight;
 
 		cairo_set_source_surface(cr, source, xd, yd);
-		cairo_rectangle (cr, xd, yd, subwidth, subheight);
+		cairo_rectangle(cr, xd, yd, subwidth, subheight);
 		cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
 		cairo_fill(cr);
 
@@ -549,8 +587,6 @@ int frames_montage(lua_State *lua) {
 int wrap_render(lua_State *lua) {
 	const char *path = lua_tostring(lua, -1);
 
- 	prepare();
-
 	int batches = ceil((float)scene.passes/(float)threads);
 
 	bool tty = ttyname(STDOUT_FILENO) != NULL;
@@ -564,8 +600,11 @@ int wrap_render(lua_State *lua) {
 		fprintf(stdout, "horizon   : %d\n", (int)floor(scene.horizon));
 		fprintf(stdout, "threshold : %f\n", scene.threshold);
 		fprintf(stdout, "objects   : %d\n", objectCount);
+		fprintf(stdout, "alphaMap  : %s\n", scene.useAlphaMap ? "yes": "no");
 		fprintf(stdout, "threads   : %d\n", threads);
 	}
+
+ 	prepare();
 
 	pixel_t *raster = calloc(scene.width * scene.height, sizeof(pixel_t));
 
@@ -605,6 +644,8 @@ int wrap_render(lua_State *lua) {
 
 	free(export);
 	free(raster);
+
+	destroy();
 	return 1;
 }
 
@@ -635,8 +676,8 @@ int main(int argc, char **argv) {
 
 	lua_newtable(lua);
 	for (int i = 0; i < argc; i++) {
-		lua_pushstring(lua, argv[i]);
 		lua_pushnumber(lua, i+1);
+		lua_pushstring(lua, argv[i]);
 		lua_settable(lua, -3);
 	}
 	lua_setglobal(lua, "args");

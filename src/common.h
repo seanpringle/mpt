@@ -124,7 +124,8 @@ typedef struct {
 	double shadowL; // shadow alpha lower limit on invisible surfaces (prenumbra cut-off)
 	double shadowD; // shadow darkness (light brightness multipler)
 	double shadowR; // shadow sharpness (light radius multipler)
-	bool experiment;
+	bool useAlphaMap;
+	bool *alphaMap;
 } scene_t;
 
 struct matrix44 {
@@ -174,6 +175,8 @@ ray_t emit(double imageX, double imageY, int imageW, int imageH, struct random_d
 group_t neighbours(vec3 pos);
 
 void prepare();
+
+void destroy();
 
 void script(int argc, char **argv);
 

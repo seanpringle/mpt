@@ -10,6 +10,37 @@ float randomNormalized(struct random_data *rnd) {
 
 void prepare() {
 	srand(scene.seed);
+
+	if (scene.useAlphaMap) {
+		notef("generating alpha map...");
+		char state[64];
+		struct random_data rnd;
+		memset(state, 0, sizeof(state));
+		memset(&rnd, 0, sizeof(rnd));
+		assert(0 == initstate_r(scene.seed, state, sizeof(state), &rnd));
+
+		// When using a shadow-catcher surface, the edges of objects in front of it blur
+		// slightly due to jittered subpixel sampling from both object and black shadow.
+		// The alphaMap is used to distinguish between object and shadow pixels, so that
+		// alpha results for definitely-not-transparent primary ray object hits can be
+		// discarded. The sampling ray comes directly from pixel center with no jitter.
+		scene.alphaMap = calloc(scene.width * scene.height, sizeof(bool));
+		for (int y = 0; y < scene.height; y++) {
+			for (int x = 0; x < scene.width; x++) {
+				double u = (double)x + 0.5;
+				double v = (double)y + 0.5;
+				ray_t ray = camera.emit(u, v, scene.width, scene.height, &rnd);
+				object_t *thing = NULL;
+				scene.alphaMap[y*scene.width+x] = march(ray, NULL, &thing, NULL) && thing->material.invisible;
+			}
+		}
+	} else {
+		notef("no alpha map...");
+	}
+}
+
+void destroy() {
+	free(scene.alphaMap);
 }
 
 void object(material_t mat, SDF3 sdf) {
@@ -62,10 +93,18 @@ static int workerRun(void *context) {
 					ray_t ray = camera.emit(u, v, scene.width, scene.height, &rnd);
 					Color color; int bounces; double alpha;
 					trace(ray, 0, NULL, &color, &bounces, &alpha);
-					pixel_t *pixel = &job->raster[y*scene.width+x];
-					pixel->color = colorAdd(pixel->color, color);
-					pixel->alpha += alpha;
-					pixel->rays++;
+					if (scene.useAlphaMap && (alpha > 0.999 || scene.alphaMap[y*scene.width+x])) {
+						pixel_t *pixel = &job->raster[y*scene.width+x];
+						pixel->color = colorAdd(pixel->color, color);
+						pixel->alpha += alpha;
+						pixel->rays++;
+					} else
+					if (!scene.useAlphaMap) {
+						pixel_t *pixel = &job->raster[y*scene.width+x];
+						pixel->color = colorAdd(pixel->color, color);
+						pixel->alpha += alpha;
+						pixel->rays++;
+					}
 				}
 			}
 		}

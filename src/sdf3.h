@@ -37,9 +37,15 @@ SDF3 ellipsoid(double x, double y, double z);
 
 SDF3 combineSDFs(int count, SDF3 *sdfs);
 
+SDF3 smoothCombineSDFs(int count, SDF3 *sdfs, double k);
+
 SDF3 subtractSDFs(int count, SDF3 *sdfs);
 
+SDF3 smoothSubtractSDFs(int count, SDF3 *sdfs, double k);
+
 SDF3 intersectSDFs(int count, SDF3 *sdfs);
+
+SDF3 smoothIntersectSDFs(int count, SDF3 *sdfs, double k);
 
 SDF3 extrude(double h, SDF2 sdf);
 

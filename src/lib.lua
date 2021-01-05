@@ -1,9 +1,20 @@
 
+math.rad = function(deg)
+	return deg*math.pi/180
+end
+
+math.deg = function(rad)
+	return rad*180/math.pi
+end
+
 v2 = (function()
 
 	local v2lib = {
 		add = function(va,vb)
 			return v2(va[1]+vb[1], va[2]+vb[2])
+		end,
+		distance = function(va,vb)
+			return math.sqrt(va[1]*va[1] + va[2]*va[2])
 		end,
 	}
 
@@ -24,6 +35,9 @@ v3,rgb = (function()
 		rotate = function(va,axis,deg)
 			local x,y,z = _v3rotate(axis,deg,va)
 			return v3(x,y,z)
+		end,
+		distance = function(va,vb)
+			return math.sqrt(va[1]*va[1] + va[2]*va[2] + va[3]*va[3])
 		end,
 	}
 
@@ -67,6 +81,7 @@ function scene(t)
 	local horizon   = t.horizon   or 100000
 	local threshold = t.threshold or 0.0001
 	local ambient   = t.ambient   or naught
+	local alphaMap  = t.alphaMap  or false
 
 	for i = 1,#args do
 		if args[i] == "--width" then
@@ -84,6 +99,9 @@ function scene(t)
 		if args[i] == "--seed" then
 			seed = tonumber(args[i+1])
 		end
+		if args[i] == "--alpha-map" then
+			alphaMap = true
+		end
 	end
 
 	_scene(
@@ -98,7 +116,8 @@ function scene(t)
 		t.shadowH or 0,
 		t.shadowL or 0,
 		t.shadowD or 0,
-		t.shadowR or 0
+		t.shadowR or 0,
+		alphaMap
 	)
 end
 
@@ -183,6 +202,7 @@ function triprism(h, w)
 end
 
 steel     = metal(rgb(0.4, 0.4, 0.4), 0.95)
+rusty     = metal(rgb(0.314,0.082,0.008), 0.8)
 stainless = metal(rgb(0.4, 0.4, 0.4), 0.3)
 gold      = metal(rgb(0.93, 0.78, 0.31), 0.0)
 copper    = metal(rgb(0.68, 0.45, 0.41), 0.8)

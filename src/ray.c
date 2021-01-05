@@ -67,6 +67,7 @@ void trace(ray_t ray, int depth, object_t *bypass, Color *rcolor, int *rbounces,
 				if (depth > 0 && material.invisible) {
 					attenuation = White;
 					scolor = scene.ambient;
+					//alpha = 1.0;
 				}
 
 				color = colorAdd(color, colorMul(attenuation, scolor));
@@ -76,6 +77,7 @@ void trace(ray_t ray, int depth, object_t *bypass, Color *rcolor, int *rbounces,
 				if (depth == 0 && material.invisible) {
 					alpha = MIN(scene.shadowH, MAX(0.0, (alpha-(colorBrightness(scolor)/scene.shadowD))));
 					color = attenuation;
+					//color = Black;
 				}
 
 				bounces += sbounces;

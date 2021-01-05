@@ -40,3 +40,7 @@ double dround(double val) {
 double sign(double val) {
 	return val < 0.0 ? -1.0: (val > 0.0 ? 1.0: 0.0);
 }
+
+double dmix(double x, double y, double a) {
+	return x + (y - x) * a;
+}
