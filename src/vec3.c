@@ -94,4 +94,12 @@ vec3 vec3Clamp(vec3 v, vec3 l, vec3 h) {
 	return (vec3){.x = dclamp(v.x, l.x, h.x), .y = dclamp(v.y, l.y, h.y), .z = dclamp(v.z, l.z, h.z)};
 }
 
-
+bool vec3Less(vec3 va, vec3 vb) {
+	if (va.x < vb.x) return true;
+	if (va.x > vb.x) return false;
+	if (va.y < vb.y) return true;
+	if (va.y > vb.y) return false;
+	if (va.z < vb.z) return true;
+	if (va.z > vb.z) return false;
+	return false;
+}

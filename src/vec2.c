@@ -1,5 +1,6 @@
 
 #include <math.h>
+#include <stdint.h>
 #include "vec2.h"
 
 double vec2Len(vec2 va) {

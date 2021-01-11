@@ -28,6 +28,7 @@ double dmix(double x, double y, double a);
 #define unit(v) _Generic((v), vec2: vec2Unit, vec3: vec3Unit)(v)
 #define scale(v,s) _Generic((v), vec2: vec2Scale, vec3: vec3Scale)(v,s)
 #define dot(a,b) _Generic((a), vec2: vec2Dot, vec3: vec3Dot)(a,b)
+#define cross(a,b) _Generic((a), vec3: vec3Cross)(a,b)
 #define add(a,b) _Generic((a), vec2: vec2Add, vec3: vec3Add)(a,b)
 #define sub(a,b) _Generic((a), vec2: vec2Sub, vec3: vec3Sub)(a,b)
 #define mul(a,b) _Generic((a), vec2: vec2Mul, vec3: vec3Mul)(a,b)
@@ -36,6 +37,7 @@ double dmix(double x, double y, double a);
 #define max(a,b) _Generic((a), vec2: vec2Max, vec3: vec3Max, int: imax, double: dmax)(a,b)
 #define min(a,b) _Generic((a), vec2: vec2Min, vec3: vec3Min, int: imin, double: dmin)(a,b)
 #define mix(a,b,c) _Generic((a), double: dmix)(a,b,c)
+#define less(a,b) _Generic((a), vec3: vec3Less)(a,b)
 #define clamp(a,b,c) _Generic((a), vec3: vec3Clamp, double: dclamp)(a,b,c)
 #define round(a) _Generic((a), vec3: vec3Round, double: dround)(a)
 

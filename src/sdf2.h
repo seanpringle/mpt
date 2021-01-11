@@ -9,8 +9,6 @@ typedef struct {
 
 double SDF2Evaluate(SDF2 sdf, vec2 p);
 
-double circleDistance(vec2 center, double radius, vec2 pos);
-
 SDF2 circle(double diameter);
 
 SDF2 rectangle(double x, double y);
@@ -24,3 +22,6 @@ SDF2 stadium(double h, double d1, double d2);
 SDF2 parabola(double w, double h);
 
 SDF2 hexagram(double diameter);
+
+SDF2 ellipse(double w, double h);
+

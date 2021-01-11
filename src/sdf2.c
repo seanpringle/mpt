@@ -2,14 +2,8 @@
 #include "common.h"
 #include "glsl.h"
 
-vec2 Zero2;
-
 double SDF2Evaluate(SDF2 sdf, vec2 p) {
 	return sdf.evaluate(sdf.context, p);
-}
-
-double circleDistance(vec2 center, double radius, vec2 pos) {
-	return len(sub(pos, center)) - radius;
 }
 
 struct circle {
@@ -38,13 +32,13 @@ struct rectangle {
 
 static double rectangleEvaluate(void *p, vec2 pos) {
 	struct rectangle *s = p;
-	vec2 d = sub(abs(pos), v2(s->x,s->y));
+	vec2 d = sub(abs(pos), v2(s->x, s->y));
 	return len(max(d, Zero2)) + min(max(d.x, d.y), 0.0);
 }
 
 static circle_t rectangleBounds(void *p) {
 	struct rectangle *s = p;
-	return (circle_t){Zero2, sqrt(s->x*s->x + s->y*s->y)};
+	return (circle_t){Zero2, len(v2(s->x, s->y))};
 }
 
 SDF2 rectangle(double x, double y) {
@@ -53,3 +47,4 @@ SDF2 rectangle(double x, double y) {
 	s->y = y/2;
 	return (SDF2){rectangleEvaluate, rectangleBounds(s), s};
 }
+

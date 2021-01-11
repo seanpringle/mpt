@@ -43,8 +43,8 @@ void reset();
 #include "vec3.h"
 #include "color.h"
 
-extern vec2 Zero2;
-extern vec3 Zero3;
+#define Zero2 (vec2){0,0}
+#define Zero3 (vec3){0,0,0}
 
 typedef struct {
 	vec3 origin;

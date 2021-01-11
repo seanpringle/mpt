@@ -1,6 +1,6 @@
 
+CC=gcc
 CFLAGS=-O3 -flto -march=native -std=c11 -g -Wall -Werror $(shell pkg-config --cflags cairo luajit)
-#CFLAGS=-O0 -std=c11 -g -Wall -Werror $(shell pkg-config --cflags cairo luajit)
 LFLAGS=-lm $(shell pkg-config --libs cairo luajit) -pthread
 OBJECTS=$(shell ls -1 src/*.c | sed 's/c$$/o/g')
 

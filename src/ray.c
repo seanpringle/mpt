@@ -67,7 +67,7 @@ void trace(ray_t ray, int depth, object_t *bypass, Color *rcolor, int *rbounces,
 				if (depth > 0 && material.invisible) {
 					attenuation = White;
 					scolor = scene.ambient;
-					//alpha = 1.0;
+					alpha = 1.0;
 				}
 
 				color = colorAdd(color, colorMul(attenuation, scolor));
@@ -77,7 +77,7 @@ void trace(ray_t ray, int depth, object_t *bypass, Color *rcolor, int *rbounces,
 				if (depth == 0 && material.invisible) {
 					alpha = MIN(scene.shadowH, MAX(0.0, (alpha-(colorBrightness(scolor)/scene.shadowD))));
 					color = attenuation;
-					//color = Black;
+					color = Black;
 				}
 
 				bounces += sbounces;
@@ -158,13 +158,16 @@ bool march(ray_t ray, object_t *bypass, object_t **thing, vec3 *hit) {
 		double b = dot(to, ray.direction);
 		double c = dot(to, to) - (bounds.radius*bounds.radius);
 		double d = b*b - c;
+
 		if (d > 0) {
 			d = sqrt(d);
+
 			double t1 = -b - d;
 			if (t1 > scene.threshold) {
 				targets[count++] = t;
 				continue;
 			}
+
 			double t2 = -b + d;
 			if (t2 > scene.threshold) {
 				targets[count++] = t;
@@ -181,19 +184,23 @@ bool march(ray_t ray, object_t *bypass, object_t **thing, vec3 *hit) {
 			pos.y < scene.horizon && pos.y > -scene.horizon &&
 			pos.z < scene.horizon && pos.z > -scene.horizon
 		){
-			object_t *near = NULL;
-			double dist = 0;
+			object_t *near = targets[0];
+			double dist = SDF3Evaluate(near->sdf, pos);
 
-			for (int i = 0; i < count; i++) {
+			for (int i = 1; i < count; i++) {
 				object_t *t = targets[i];
-				if (near != NULL) {
-					double bd = sphereDistance(t->sdf.bounds.center, t->sdf.bounds.radius, pos);
-					if (bd > dist) {
-						continue;
-					}
+
+				SDF3 sdf = t->sdf;
+				sphere_t bs = sdf.bounds;
+
+				// Re-check the bounding sphere for cheap elimination
+				double bd = len(sub(pos, bs.center)) - bs.radius;
+				if (bd > dist) {
+					continue;
 				}
-				double d = SDF3Evaluate(t->sdf, pos);
-				if (d < dist || near == NULL) {
+
+				double d = SDF3Evaluate(sdf, pos);
+				if (d < dist) {
 					near = t;
 					dist = d;
 					continue;

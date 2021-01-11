@@ -1,5 +1,6 @@
 
 #include "common.h"
+#include "mesh.h"
 #include "lua-lib.h"
 
 #include <lua.h>
@@ -181,6 +182,19 @@ int wrap_object(lua_State *lua) {
 	return 0;
 }
 
+int wrap_mesh(lua_State *lua) {
+	SDF3 sdf = pop_sdf3(lua);
+	int steps = (int)pop_double(lua);
+	const char *path = lua_tostring(lua, -1);
+
+	mesh_t* mesh = meshMarch(sdf, get_nprocs(), steps, 0);
+	meshWriteObjFile(mesh, path);
+	meshFree(mesh);
+
+	lua_pop(lua, 1);
+	return 0;
+}
+
 int wrap_light(lua_State *lua) {
 	Color color = pop_color(lua);
 	material_t *material = lua_newuserdata(lua, sizeof(material_t));
@@ -240,6 +254,14 @@ int wrap_rectangle(lua_State *lua) {
 	return 1;
 }
 
+int wrap_ellipse(lua_State *lua) {
+	double h = pop_double(lua);
+	double w = pop_double(lua);
+	SDF2 *sdf = lua_newuserdata(lua, sizeof(SDF2));
+	*sdf = ellipse(w, h);
+	return 1;
+}
+
 int wrap_triangle(lua_State *lua) {
 	vec2 p3 = pop_vec2(lua);
 	vec2 p2 = pop_vec2(lua);
@@ -281,72 +303,6 @@ int wrap_hexagram(lua_State *lua) {
 	return 1;
 }
 
-int wrap_sphere(lua_State *lua) {
-	double diameter = pop_double(lua);
-	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
-	*sdf = sphere(diameter);
-	return 1;
-}
-
-int wrap_cube(lua_State *lua) {
-	double z = pop_double(lua);
-	double y = pop_double(lua);
-	double x = pop_double(lua);
-	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
-	*sdf = cube(x, y, z);
-	return 1;
-}
-
-int wrap_capsule(lua_State *lua) {
-	double d2 = pop_double(lua);
-	double d1 = pop_double(lua);
-	double h = pop_double(lua);
-	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
-	*sdf = capsule(h, d1, d2);
-	return 1;
-}
-
-int wrap_cylinder(lua_State *lua) {
-	double d = pop_double(lua);
-	double h = pop_double(lua);
-	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
-	*sdf = cylinder(h, d);
-	return 1;
-}
-
-int wrap_torus(lua_State *lua) {
-	double s = pop_double(lua);
-	double d = pop_double(lua);
-	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
-	*sdf = torus(d, s);
-	return 1;
-}
-
-int wrap_cone(lua_State *lua) {
-	double d = pop_double(lua);
-	double h = pop_double(lua);
-	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
-	*sdf = cone(h, d);
-	return 1;
-}
-
-int wrap_pyramid(lua_State *lua) {
-	double d = pop_double(lua);
-	double h = pop_double(lua);
-	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
-	*sdf = pyramid(h, d);
-	return 1;
-}
-
-int wrap_ellipsoid(lua_State *lua) {
-	double z = pop_double(lua);
-	double y = pop_double(lua);
-	double x = pop_double(lua);
-	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
-	*sdf = ellipsoid(x, y, z);
-	return 1;
-}
-
 int wrap_rounded(lua_State *lua) {
 	SDF3 inner = pop_sdf3(lua);
 	double radius = pop_double(lua);
@@ -368,13 +324,13 @@ int wrap_repeat(lua_State *lua) {
 	return 1;
 }
 
-int wrap_elongate(lua_State *lua) {
+int wrap_extend(lua_State *lua) {
 	SDF3 inner = pop_sdf3(lua);
 	double z = pop_double(lua);
 	double y = pop_double(lua);
 	double x = pop_double(lua);
 	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
-	*sdf = elongate(x, y, z, inner);
+	*sdf = extend(x, y, z, inner);
 	return 1;
 }
 
@@ -411,7 +367,7 @@ int wrap_extrude(lua_State *lua) {
 	return 1;
 }
 
-void make_csg(lua_State *lua, SDF3 (*csg)(int, SDF3*)) {
+void make_csg(lua_State *lua, SDF3 (*csg)(int, SDF3*, double)) {
 	int count = lua_objlen(lua, -1);
 	SDF3 sdfs[count];
 	for (int i = 1; i <= count; i++) {
@@ -421,49 +377,55 @@ void make_csg(lua_State *lua, SDF3 (*csg)(int, SDF3*)) {
 		sdfs[i-1] = pop_sdf3(lua);
 	}
 	lua_pop(lua, 1);
-	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
-	*sdf = csg(count, sdfs);
-}
 
-void make_smooth_csg(lua_State *lua, SDF3 (*csg)(int, SDF3*, double)) {
-	int count = lua_objlen(lua, -1);
-	SDF3 sdfs[count];
-	for (int i = 1; i <= count; i++) {
-		lua_pushnumber(lua, i);
-		lua_gettable(lua, -2);
-		lua_ensuref(lua, !lua_isnil(lua, -1), "CSG nil SDF");
-		sdfs[i-1] = pop_sdf3(lua);
-	}
-	lua_pop(lua, 1);
-	double k = pop_double(lua);
+	double k = lua_gettop(lua) > 0 ? pop_double(lua): 0.0;
+
 	SDF3 *sdf = lua_newuserdata(lua, sizeof(SDF3));
 	*sdf = csg(count, sdfs, k);
 }
 
-int wrap_combine(lua_State *lua) {
-	if (lua_gettop(lua) > 1) {
-		make_smooth_csg(lua, smoothCombineSDFs);
-	} else {
-		make_csg(lua, combineSDFs);
-	}
+int wrap_union(lua_State *lua) {
+	make_csg(lua, csgUnion);
 	return 1;
 }
 
-int wrap_subtract(lua_State *lua) {
-	if (lua_gettop(lua) > 1) {
-		make_smooth_csg(lua, smoothSubtractSDFs);
-	} else {
-		make_csg(lua, subtractSDFs);
-	}
+int wrap_union_smooth(lua_State *lua) {
+	make_csg(lua, csgSmoothUnion);
 	return 1;
 }
 
-int wrap_intersect(lua_State *lua) {
-	if (lua_gettop(lua) > 1) {
-		make_smooth_csg(lua, smoothIntersectSDFs);
-	} else {
-		make_csg(lua, intersectSDFs);
-	}
+int wrap_union_chamfer(lua_State *lua) {
+	make_csg(lua, csgChamferUnion);
+	return 1;
+}
+
+int wrap_difference(lua_State *lua) {
+	make_csg(lua, csgDifference);
+	return 1;
+}
+
+int wrap_difference_smooth(lua_State *lua) {
+	make_csg(lua, csgSmoothDifference);
+	return 1;
+}
+
+int wrap_difference_chamfer(lua_State *lua) {
+	make_csg(lua, csgChamferDifference);
+	return 1;
+}
+
+int wrap_intersection(lua_State *lua) {
+	make_csg(lua, csgIntersection);
+	return 1;
+}
+
+int wrap_intersection_smooth(lua_State *lua) {
+	make_csg(lua, csgSmoothIntersection);
+	return 1;
+}
+
+int wrap_intersection_chamfer(lua_State *lua) {
+	make_csg(lua, csgChamferIntersection);
 	return 1;
 }
 
@@ -697,6 +659,9 @@ int main(int argc, char **argv) {
 	lua_pushcfunction(lua, wrap_render);
 	lua_setglobal(lua, "render");
 
+	lua_pushcfunction(lua, wrap_mesh);
+	lua_setglobal(lua, "mesh");
+
 	lua_pushcfunction(lua, frames_montage);
 	lua_setglobal(lua, "montage");
 
@@ -730,6 +695,9 @@ int main(int argc, char **argv) {
 	lua_pushcfunction(lua, wrap_rectangle);
 	lua_setglobal(lua, "rectangle");
 
+	lua_pushcfunction(lua, wrap_ellipse);
+	lua_setglobal(lua, "ellipse");
+
 	lua_pushcfunction(lua, wrap_triangle);
 	lua_setglobal(lua, "triangle");
 
@@ -745,47 +713,35 @@ int main(int argc, char **argv) {
 	lua_pushcfunction(lua, wrap_hexagram);
 	lua_setglobal(lua, "hexagram");
 
-	lua_pushcfunction(lua, wrap_sphere);
-	lua_setglobal(lua, "sphere");
-
-	lua_pushcfunction(lua, wrap_cube);
-	lua_setglobal(lua, "cube");
-
-	lua_pushcfunction(lua, wrap_cylinder);
-	lua_setglobal(lua, "cylinder");
-
-	lua_pushcfunction(lua, wrap_capsule);
-	lua_setglobal(lua, "capsule");
-
-	lua_pushcfunction(lua, wrap_torus);
-	lua_setglobal(lua, "torus");
-
-	lua_pushcfunction(lua, wrap_cone);
-	lua_setglobal(lua, "cone");
-
-	lua_pushcfunction(lua, wrap_pyramid);
-	lua_setglobal(lua, "pyramid");
-
-	lua_pushcfunction(lua, wrap_ellipsoid);
-	lua_setglobal(lua, "ellipsoid");
-
 	lua_pushcfunction(lua, wrap_rounded);
 	lua_setglobal(lua, "rounded");
 
-	lua_pushcfunction(lua, wrap_repeat);
-	lua_setglobal(lua, "reprise");
+	lua_pushcfunction(lua, wrap_union);
+	lua_setglobal(lua, "csg_union");
 
-	lua_pushcfunction(lua, wrap_elongate);
-	lua_setglobal(lua, "lengthen");
+	lua_pushcfunction(lua, wrap_union_smooth);
+	lua_setglobal(lua, "csg_union_smooth");
 
-	lua_pushcfunction(lua, wrap_combine);
-	lua_setglobal(lua, "combine");
+	lua_pushcfunction(lua, wrap_union_chamfer);
+	lua_setglobal(lua, "csg_union_chamfer");
 
-	lua_pushcfunction(lua, wrap_subtract);
-	lua_setglobal(lua, "subtract");
+	lua_pushcfunction(lua, wrap_difference);
+	lua_setglobal(lua, "csg_difference");
 
-	lua_pushcfunction(lua, wrap_intersect);
-	lua_setglobal(lua, "intersect");
+	lua_pushcfunction(lua, wrap_difference_smooth);
+	lua_setglobal(lua, "csg_difference_smooth");
+
+	lua_pushcfunction(lua, wrap_difference_chamfer);
+	lua_setglobal(lua, "csg_difference_chamfer");
+
+	lua_pushcfunction(lua, wrap_intersection);
+	lua_setglobal(lua, "csg_intersection");
+
+	lua_pushcfunction(lua, wrap_intersection_smooth);
+	lua_setglobal(lua, "csg_intersection_smooth");
+
+	lua_pushcfunction(lua, wrap_intersection_chamfer);
+	lua_setglobal(lua, "csg_intersection_chamfer");
 
 	lua_pushcfunction(lua, wrap_translate);
 	lua_setglobal(lua, "translate");
@@ -798,6 +754,12 @@ int main(int argc, char **argv) {
 
 	lua_pushcfunction(lua, wrap_extrude);
 	lua_setglobal(lua, "extrude");
+
+	lua_pushcfunction(lua, wrap_repeat);
+	lua_setglobal(lua, "reprise");
+
+	lua_pushcfunction(lua, wrap_extend);
+	lua_setglobal(lua, "extend");
 
 	lua_pushcfunction(lua, traceback);
 

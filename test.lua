@@ -1,12 +1,12 @@
 
 scene({
-	width     = 1920,
-	height    = 1080,
-	passes    = 1,
+	width     = 2560,
+	height    = 1440,
+	passes    = 500,
 	bounces   = 10,
 	seed      = 123456789,
-	horizon   = 100000,
-	threshold = 0.0001,
+	horizon   = 50000,
+	threshold = 0.01,
 	ambient   = white:scale(0.025),
 })
 
@@ -28,8 +28,8 @@ object(
 
 object(brass,
 	translate(v3(-5500, -1200, 500),
-		subtract({
-			intersect({
+		difference({
+			intersection({
 				sphere(1000),
 				cube(800, 800, 800),
 			}),
@@ -42,8 +42,8 @@ object(brass,
 
 object(brass,
 	translate(v3(5500, -1200, 500),
-		combine({
-			intersect({
+		union({
+			intersection({
 				sphere(1000),
 				cube(800, 800, 800)
 			}),
@@ -82,9 +82,9 @@ bowl = revolve(0, parabola(2000, 1500))
 
 object(
 	glass(rgb(1.0, 0.5, 0.5), 1.5),
-	combine({
+	union({
 		translateZ(100, cylinderR(200, 1000, 10)),
-		subtract({bowl, translateZ(200, bowl)})
+		difference({bowl, translateZ(200, bowl)})
 	})
 )
 
@@ -100,11 +100,11 @@ function things(position, material)
 	)
 
 	object(material,
-		translate(position:add(v3(0,2000,500)), cube(1000, 1000, 1000))
+		translate(position:add(v3(0,2000,500)), difference({chamfer = 100}, { cube(1000, 1000, 1000), cylinder(1002, 400) }))
 	)
 
 	object(material,
-		translate(position:add(v3(-1500,0,500)), cylinder(1000, 1000))
+		translate(position:add(v3(-1500,0,500)), difference({chamfer = 100}, { cylinder(1000, 1000), cube(400, 400, 1002) }))
 	)
 
 	object(material,

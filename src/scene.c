@@ -93,13 +93,7 @@ static int workerRun(void *context) {
 					ray_t ray = camera.emit(u, v, scene.width, scene.height, &rnd);
 					Color color; int bounces; double alpha;
 					trace(ray, 0, NULL, &color, &bounces, &alpha);
-					if (scene.useAlphaMap && (alpha > 0.999 || scene.alphaMap[y*scene.width+x])) {
-						pixel_t *pixel = &job->raster[y*scene.width+x];
-						pixel->color = colorAdd(pixel->color, color);
-						pixel->alpha += alpha;
-						pixel->rays++;
-					} else
-					if (!scene.useAlphaMap) {
+					if (!scene.useAlphaMap || (scene.useAlphaMap && (alpha > 0.999 || scene.alphaMap[y*scene.width+x]))) {
 						pixel_t *pixel = &job->raster[y*scene.width+x];
 						pixel->color = colorAdd(pixel->color, color);
 						pixel->alpha += alpha;
@@ -155,7 +149,7 @@ void render(pixel_t *raster, int workers) {
 	}
 
 	for (int i = 0; i < workers; i++) {
-		thrd_join(threads[i], NULL);
+		while (thrd_join(threads[i], NULL) != thrd_success);
 		merge(raster, jobs[i].raster);
 		free(jobs[i].raster);
 	}

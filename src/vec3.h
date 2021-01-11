@@ -39,3 +39,4 @@ bool vec3Refract(vec3 v, vec3 n, double niOverNt, vec3 *refracted);
 
 vec3 vec3Clamp(vec3 v, vec3 l, vec3 h);
 
+bool vec3Less(vec3 va, vec3 vb);

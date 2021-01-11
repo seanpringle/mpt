@@ -2,12 +2,13 @@
 #include "common.h"
 #include "glsl.h"
 
+typedef double (*CSGcmp)(double,double,void*);
+
 struct CSG {
 	int count;
 	SDF3 *sdfs;
-	union {
-		double k;
-	};
+	CSGcmp cmp;
+	double k;
 };
 
 sphere_t csgBounds(void *p) {
@@ -52,163 +53,108 @@ sphere_t csgBounds(void *p) {
 	return (sphere_t){center, radius};
 }
 
-// https://www.iquilezles.org/www/articles/smin/smin.htm
-static double smoothUnion(double a, double b, double k) {
+static double csgEvaluate(void *p, vec3 pos) {
+	struct CSG *s = p;
+
+	int count = s->count;
+	if (!count) return 0.0;
+
+	SDF3 *sdfs = s->sdfs;
+	const CSGcmp cmp = s->cmp;
+
+	double dist = SDF3Evaluate(sdfs[0], pos);
+	for (int i = 1; i < count; i++) {
+		dist = cmp(SDF3Evaluate(sdfs[i], pos), dist, s);
+	}
+	return dist;
+}
+
+static SDF3 csgSDFs(int count, SDF3* sdfs, CSGcmp cmp, double k) {
+	struct CSG *s = allot(sizeof(struct CSG));
+	s->count = count;
+	s->sdfs = allot(count * sizeof(SDF3));
+	s->cmp = cmp;
+	s->k = k;
+	memmove(s->sdfs, sdfs, count * sizeof(SDF3));
+	return (SDF3){csgEvaluate, csgBounds(s), s};
+}
+
+static double simpleUnion(double a, double b, void* p) {
+	return min(a, b);
+}
+
+static double smoothUnion(double a, double b, void* p) {
+	double k = ((struct CSG*)p)->k;
 	double h = max(k - abs(a-b), 0.0 ) / k;
 	return min(a, b) - h*h*h*k*(1.0/6.0);
 }
 
-static double unionEvaluate(void *p, vec3 pos) {
-	struct CSG *s = p;
-	int count = s->count;
-	SDF3 *sdfs = s->sdfs;
-
-	double dist = 0;
-	for (int i = 0; i < count; i++) {
-		SDF3 sdf = sdfs[i];
-		double d = SDF3Evaluate(sdf, pos);
-		if (i == 0 || d < dist) {
-			dist = d;
-		}
-	}
-	return dist;
+static double chamferUnion(double a, double b, void* p) {
+	double k = ((struct CSG*)p)->k;
+	return min(min(a, b), (a - k + b) * sqrt(0.5));
 }
 
-static double smoothUnionEvaluate(void *p, vec3 pos) {
-	struct CSG *s = p;
-	int count = s->count;
-	SDF3 *sdfs = s->sdfs;
-
-	double dist = 0;
-	for (int i = 0; i < count; i++) {
-		SDF3 sdf = sdfs[i];
-		double d = SDF3Evaluate(sdf, pos);
-		dist = (i == 0) ? d: smoothUnion(dist, d, s->k);
-	}
-	return dist;
+SDF3 csgUnion(int count, SDF3 *sdfs, double k) {
+	return csgSDFs(count, sdfs, simpleUnion, k);
 }
 
-SDF3 combineSDFs(int count, SDF3 *sdfs) {
-	struct CSG *s = allot(sizeof(struct CSG));
-	s->count = count;
-	s->sdfs = allot(count * sizeof(SDF3));
-	memmove(s->sdfs, sdfs, count * sizeof(SDF3));
-	return (SDF3){unionEvaluate, csgBounds(s), s};
+SDF3 csgSmoothUnion(int count, SDF3 *sdfs, double k) {
+	return csgSDFs(count, sdfs, smoothUnion, k);
 }
 
-SDF3 smoothCombineSDFs(int count, SDF3 *sdfs, double k) {
-	struct CSG *s = allot(sizeof(struct CSG));
-	s->count = count;
-	s->sdfs = allot(count * sizeof(SDF3));
-	s->k = k;
-	memmove(s->sdfs, sdfs, count * sizeof(SDF3));
-	return (SDF3){smoothUnionEvaluate, csgBounds(s), s};
+SDF3 csgChamferUnion(int count, SDF3 *sdfs, double k) {
+	return csgSDFs(count, sdfs, chamferUnion, k);
 }
 
-static double differenceEvaluate(void *p, vec3 pos) {
-	struct CSG *s = p;
-	int count = s->count;
-	SDF3 *sdfs = s->sdfs;
-
-	double dist = 0;
-	for (int i = 0; i < count; i++) {
-		SDF3 sdf = sdfs[i];
-		double d = SDF3Evaluate(sdf, pos);
-		if (i == 0) {
-			dist = d;
-		} else
-		if (-d > dist) {
-			dist = -d;
-		}
-	}
-	return dist;
+static double simpleIntersection(double a, double b, void* p) {
+	return max(a, b);
 }
 
-static double smoothDifference(double d1, double d2, double k) {
-	double h = clamp(0.5 - 0.5*(d2+d1)/k, 0.0, 1.0);
-	return mix( d2, -d1, h ) + k*h*(1.0-h);
+static double smoothIntersection(double a, double b, void* p) {
+	double k = ((struct CSG*)p)->k;
+	double h = clamp(0.5 - 0.5*(b-a)/k, 0.0, 1.0);
+	return mix(b, a, h) + k*h*(1.0-h);
 }
 
-static double smoothDifferenceEvaluate(void *p, vec3 pos) {
-	struct CSG *s = p;
-	int count = s->count;
-	SDF3 *sdfs = s->sdfs;
-
-	double dist = 0;
-	for (int i = 0; i < count; i++) {
-		SDF3 sdf = sdfs[i];
-		double d = SDF3Evaluate(sdf, pos);
-		dist = (i == 0) ? d: smoothDifference(dist, d, s->k);
-	}
-	return dist;
+static double chamferIntersection(double a, double b, void* p) {
+	double k = ((struct CSG*)p)->k;
+	return max(max(a, b), (a + k + b) * sqrt(0.5));
 }
 
-SDF3 subtractSDFs(int count, SDF3 *sdfs) {
-	struct CSG *s = allot(sizeof(struct CSG));
-	s->count = count;
-	s->sdfs = allot(count * sizeof(SDF3));
-	memmove(s->sdfs, sdfs, count * sizeof(SDF3));
-	return (SDF3){differenceEvaluate, csgBounds(s), s};
+SDF3 csgIntersection(int count, SDF3 *sdfs, double k) {
+	return csgSDFs(count, sdfs, simpleIntersection, k);
 }
 
-SDF3 smoothSubtractSDFs(int count, SDF3 *sdfs, double k) {
-	struct CSG *s = allot(sizeof(struct CSG));
-	s->count = count;
-	s->sdfs = allot(count * sizeof(SDF3));
-	s->k = k;
-	memmove(s->sdfs, sdfs, count * sizeof(SDF3));
-	return (SDF3){smoothDifferenceEvaluate, csgBounds(s), s};
+SDF3 csgSmoothIntersection(int count, SDF3 *sdfs, double k) {
+	return csgSDFs(count, sdfs, smoothIntersection, k);
 }
 
-static double intersectionEvaluate(void *p, vec3 pos) {
-	struct CSG *s = p;
-	int count = s->count;
-	SDF3 *sdfs = s->sdfs;
-
-	double dist = 0;
-	for (int i = 0; i < count; i++) {
-		SDF3 sdf = sdfs[i];
-		double d = SDF3Evaluate(sdf, pos);
-		if (i == 0 || d > dist) {
-			dist = d;
-		}
-	}
-	return dist;
+SDF3 csgChamferIntersection(int count, SDF3 *sdfs, double k) {
+	return csgSDFs(count, sdfs, chamferIntersection, k);
 }
 
-static double smoothIntersection(double d1, double d2, double k) {
-	double h = clamp(0.5 - 0.5*(d2-d1)/k, 0.0, 1.0);
-	return mix(d2, d1, h) + k*h*(1.0-h);
+static double simpleDifference(double a, double b, void* p) {
+	return max(-a, b);
 }
 
-static double smoothIntersectionEvaluate(void *p, vec3 pos) {
-	struct CSG *s = p;
-	int count = s->count;
-	SDF3 *sdfs = s->sdfs;
-
-	double dist = 0;
-	for (int i = 0; i < count; i++) {
-		SDF3 sdf = sdfs[i];
-		double d = SDF3Evaluate(sdf, pos);
-		dist = (i == 0) ? d: smoothIntersection(dist, d, s->k);
-	}
-	return dist;
+static double smoothDifference(double a, double b, void* p) {
+	double k = ((struct CSG*)p)->k;
+	double h = clamp(0.5 - 0.5*(b+a)/k, 0.0, 1.0);
+	return mix(b, -a, h) + k*h*(1.0-h);
 }
 
-SDF3 intersectSDFs(int count, SDF3 *sdfs) {
-	struct CSG *s = allot(sizeof(struct CSG));
-	s->count = count;
-	s->sdfs = allot(count * sizeof(SDF3));
-	memmove(s->sdfs, sdfs, count * sizeof(SDF3));
-	return (SDF3){intersectionEvaluate, csgBounds(s), s};
+static double chamferDifference(double a, double b, void* p) {
+	return chamferIntersection(-a, b, p);
 }
 
-SDF3 smoothIntersectSDFs(int count, SDF3 *sdfs, double k) {
-	struct CSG *s = allot(sizeof(struct CSG));
-	s->count = count;
-	s->sdfs = allot(count * sizeof(SDF3));
-	s->k = k;
-	memmove(s->sdfs, sdfs, count * sizeof(SDF3));
-	return (SDF3){smoothIntersectionEvaluate, csgBounds(s), s};
+SDF3 csgDifference(int count, SDF3 *sdfs, double k) {
+	return csgSDFs(count, sdfs, simpleDifference, k);
 }
 
+SDF3 csgSmoothDifference(int count, SDF3 *sdfs, double k) {
+	return csgSDFs(count, sdfs, smoothDifference, k);
+}
+
+SDF3 csgChamferDifference(int count, SDF3 *sdfs, double k) {
+	return csgSDFs(count, sdfs, chamferDifference, k);
+}

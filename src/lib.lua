@@ -58,6 +58,36 @@ v3,rgb = (function()
 		end
 end)()
 
+function union(a, b)
+	if type(a) == "table" and a.smooth then
+		return csg_union_smooth(a.smooth, b)
+	end
+	if type(a) == "table" and a.chamfer then
+		return csg_union_chamfer(a.chamfer, b)
+	end
+	return csg_union(a)
+end
+
+function difference(a, b)
+	if type(a) == "table" and a.smooth then
+		return csg_difference_smooth(a.smooth, b)
+	end
+	if type(a) == "table" and a.chamfer then
+		return csg_difference_chamfer(a.chamfer, b)
+	end
+	return csg_difference(a)
+end
+
+function intersection(a, b)
+	if type(a) == "table" and a.smooth then
+		return csg_intersection_smooth(a.smooth, b)
+	end
+	if type(a) == "table" and a.chamfer then
+		return csg_intersection_chamfer(a.chamfer, b)
+	end
+	return csg_intersection(a)
+end
+
 white  = rgb(1,1,1)
 red    = rgb(1,0,0)
 green  = rgb(0,1,0)
@@ -187,6 +217,50 @@ function translateZ(dist, sdf)
 	return translate(v3(0,0,dist), sdf)
 end
 
+function cube(w,d,h)
+	return extrude(h, rectangle(w, d))
+end
+
+function sphere(d)
+	return revolve(0, circle(d))
+end
+
+function cylinder(h,d)
+	return extrude(h, circle(d))
+end
+
+function torus(d,s)
+	return revolve(d/2, circle(s))
+end
+
+function capsule(h,d1,d2)
+	return revolve(0, stadium(h, d1, d2))
+end
+
+function ellipsoid(w, d)
+	return revolve(0, ellipse(w, d))
+end
+
+function pyramid(h,w)
+	local prism = rotateX(-90, extrude(w, triangle(
+		v2(0, h),
+		v2(-w/2, 0),
+		v2(w/2, 0)
+	)))
+	return translateZ(-h/2, intersection({
+		prism,
+		rotateZ(90, prism),
+	}))
+end
+
+function cone(h,d)
+	return translateZ(-h/2, revolve(0, triangle(
+		v2(0, h),
+		v2(-d/2, 0),
+		v2(d/2, 0)
+	)))
+end
+
 function cubeR(x, y, z, r)
 	return rounded(r, cube(x-r*2, y-r*2, z-r*2))
 end
@@ -221,3 +295,4 @@ function spacetime(size)
 		translateZ(-5, cube(size, size, 10))
 	)
 end
+

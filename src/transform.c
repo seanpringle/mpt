@@ -1,11 +1,12 @@
 
 #include "common.h"
+#include "glsl.h"
 
-inline vec3 matrixMul(struct matrix44 a, vec3 b) {
+vec3 matrixMul(struct matrix44 a, vec3 b) {
 	double x = a.x00*b.x + a.x01*b.y + a.x02*b.z + a.x03;
 	double y = a.x10*b.x + a.x11*b.y + a.x12*b.z + a.x13;
 	double z = a.x20*b.x + a.x21*b.y + a.x22*b.z + a.x23;
-	return (vec3){x, y, z};
+	return v3(x, y, z);
 }
 
 static double determinant(struct matrix44 a) {
@@ -58,7 +59,7 @@ struct matrix44 translation(vec3 v) {
 
 struct matrix44 rotation(vec3 v, double a) {
 	a *= M_PI / 180.0;
-	v = vec3Unit(v);
+	v = unit(v);
 	double s = sin(a);
 	double c = cos(a);
 	double m = 1 - c;
@@ -93,35 +94,11 @@ SDF3 translate(vec3 v, SDF3 sdf) {
 	return (SDF3){transformEvaluate, transformBounds(s, m), s};
 }
 
-SDF3 translateX(double t, SDF3 sdf) {
-	return translate((vec3){t,0,0}, sdf);
-}
-
-SDF3 translateY(double t, SDF3 sdf) {
-	return translate((vec3){0,t,0}, sdf);
-}
-
-SDF3 translateZ(double t, SDF3 sdf) {
-	return translate((vec3){0,0,t}, sdf);
-}
-
 SDF3 rotate(vec3 v, double deg, SDF3 sdf) {
 	struct state *s = allot(sizeof(struct state));
 	s->sdf = sdf;
 	struct matrix44 m = rotation(v, deg);
 	s->im = inverse(m);
 	return (SDF3){transformEvaluate, transformBounds(s, m), s};
-}
-
-SDF3 rotateX(double deg, SDF3 sdf) {
-	return rotate((vec3){1,0,0}, deg, sdf);
-}
-
-SDF3 rotateY(double deg, SDF3 sdf) {
-	return rotate((vec3){0,1,0}, deg, sdf);
-}
-
-SDF3 rotateZ(double deg, SDF3 sdf) {
-	return rotate((vec3){0,0,1}, deg, sdf);
 }
 
